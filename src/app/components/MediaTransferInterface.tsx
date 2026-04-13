@@ -1,5 +1,13 @@
-import { useState, useRef, useEffect } from "react";
-import { Check, X } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "./ui/breadcrumb";
+import { Check, ChevronDown, ChevronLeft, X } from "lucide-react";
 import svgPaths from "../../imports/DesktopWorkspacesInsideAWorkspaceAssetSelected/svg-qymjkh6ysf";
 import imgAvatar from "../../imports/DesktopWorkspacesInsideAWorkspaceAssetSelected/170fd91896b84c6c4b682e5357bf92468c9db27c.png";
 import imgImage from "../../imports/DesktopWorkspacesInsideAWorkspaceAssetSelected/2d2f26fb862438064d86b838427b57762975894a.png";
@@ -23,6 +31,7 @@ interface FolderData {
   id: number;
   name: string;
   assets: CardData[];
+  subfolders: FolderData[];
 }
 
 interface MoveDropdownState {
@@ -339,7 +348,7 @@ function AddToFolderDropdown({ folders, currentFolderId, position, onSelect, onC
 
 // ─── Action Bar ───────────────────────────────────────────────────────────────
 
-function ChevronDown({ color = "#1B55F5" }: { color?: string }) {
+function ChevronDownIcon({ color = "#1B55F5" }: { color?: string }) {
   return (
     <div className="overflow-clip relative shrink-0 size-[16px]">
       <div className="absolute inset-[34.69%_13.37%_23.45%_13.53%]">
@@ -351,29 +360,124 @@ function ChevronDown({ color = "#1B55F5" }: { color?: string }) {
   );
 }
 
+interface FolderOption { id: number; name: string; isCurrent: boolean; onClick: () => void; }
+interface BreadcrumbCrumb { label: string; onClick: () => void; folders?: FolderOption[]; }
+
 interface ActionBarProps {
   title: string;
+  titleFolders?: FolderOption[];
+  breadcrumbItems?: BreadcrumbCrumb[];
   onBack: () => void;
   onMoreActionsClick: () => void;
   buttonRef: React.RefObject<HTMLDivElement>;
 }
 
-function ActionBar({ title, onBack, onMoreActionsClick, buttonRef }: ActionBarProps) {
+function ActionBar({ title, titleFolders, breadcrumbItems, onBack, onMoreActionsClick, buttonRef }: ActionBarProps) {
+  const hasBreadcrumb = !!breadcrumbItems?.length;
+  const [openDropdownIdx, setOpenDropdownIdx] = useState<number | null>(null); // -1 = title
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (openDropdownIdx === null) return;
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdownIdx(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [openDropdownIdx]);
+
+  const openDropdown = (e: React.MouseEvent, idx: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setDropdownPos({ top: rect.bottom + 6, left: rect.left });
+    setOpenDropdownIdx(openDropdownIdx === idx ? null : idx);
+  };
+
+  const crumbDropdown = (folders: FolderOption[], idx: number) =>
+    openDropdownIdx === idx && (
+      <div
+        ref={dropdownRef}
+        className="fixed bg-white flex flex-col gap-[2px] p-[4px] rounded-[6px] z-[100] shadow-[0px_5px_15px_0px_rgba(30,30,30,0.12)] border border-[#e4e4e4] min-w-[180px]"
+        style={{ top: dropdownPos.top, left: dropdownPos.left }}
+      >
+        {folders.map((f) => (
+          <div
+            key={f.id}
+            onClick={() => { f.onClick(); setOpenDropdownIdx(null); }}
+            className={`flex items-center gap-[8px] h-[36px] px-[10px] rounded-[4px] cursor-pointer transition-colors ${f.isCurrent ? "bg-[#f0f4ff]" : "hover:bg-[#f5f5f5]"}`}
+          >
+            <span className={`flex-1 font-['Satoshi-Medium',sans-serif] text-[14px] truncate ${f.isCurrent ? "text-[#1b55f5]" : "text-[#1e1e1e]"}`}>{f.name}</span>
+            {f.isCurrent && <Check className="size-[14px] text-[#1b55f5] shrink-0" />}
+          </div>
+        ))}
+      </div>
+    );
+
   return (
     <div className="flex flex-col gap-[24px] items-start shrink-0 w-full">
       {/* Row 1 */}
       <div className="flex gap-[52px] items-center min-h-[36px] shrink-0 w-full">
-        <div className="flex flex-[1_0_0] flex-col items-start justify-center min-h-px min-w-px">
-          <div className="flex gap-[12px] items-center shrink-0">
-            <div
-              onClick={onBack}
-              className="flex items-center justify-center shrink-0 cursor-pointer hover:opacity-60 transition-opacity"
-            >
-              <svg fill="none" preserveAspectRatio="none" viewBox="0 0 21 18" width="21" height="18">
-                <path d={bodySvgPaths.p35ac80c0} fill="#1E1E1E" />
-              </svg>
-            </div>
-            <p className="font-['Satoshi-Bold',sans-serif] leading-[28px] not-italic text-[#1e1e1e] text-[24px] whitespace-nowrap">{title}</p>
+        <div className="flex flex-[1_0_0] flex-col items-start justify-center min-h-px min-w-0 overflow-hidden">
+          <div className="flex gap-[12px] items-center min-w-0 max-w-full">
+            {!hasBreadcrumb && (
+              <div
+                onClick={onBack}
+                className="flex items-center justify-center shrink-0 cursor-pointer hover:opacity-60 transition-opacity"
+              >
+                <svg fill="none" preserveAspectRatio="none" viewBox="0 0 21 18" width="21" height="18">
+                  <path d={bodySvgPaths.p35ac80c0} fill="#1E1E1E" />
+                </svg>
+              </div>
+            )}
+            {hasBreadcrumb ? (
+              <Breadcrumb>
+                <BreadcrumbList className="flex-nowrap gap-[8px]">
+                  {breadcrumbItems!.map((item, i) => (
+                    <React.Fragment key={i}>
+                      <BreadcrumbItem className="relative">
+                        <BreadcrumbLink
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); item.onClick(); }}
+                          className="font-['Satoshi-Bold',sans-serif] leading-[28px] not-italic text-[#949494] text-[24px] hover:text-[#1e1e1e]"
+                        >
+                          {item.label}
+                        </BreadcrumbLink>
+                        {item.folders && item.folders.length > 1 && (
+                          <button
+                            onClick={(e) => openDropdown(e, i)}
+                            className="flex items-center justify-center ml-[-2px] p-[2px] rounded hover:bg-[#ebebeb] transition-colors text-[#949494] hover:text-[#1e1e1e]"
+                          >
+                            <ChevronDown className="size-[16px]" />
+                          </button>
+                        )}
+                        {item.folders && crumbDropdown(item.folders, i)}
+                      </BreadcrumbItem>
+                      <BreadcrumbSeparator className="[&>svg]:size-5 text-[#949494]" />
+                    </React.Fragment>
+                  ))}
+                  <BreadcrumbItem className="relative">
+                    <BreadcrumbPage className="font-['Satoshi-Bold',sans-serif] leading-[28px] not-italic text-[#1e1e1e] text-[24px]">
+                      {title}
+                    </BreadcrumbPage>
+                    {titleFolders && titleFolders.length > 1 && (
+                      <button
+                        onClick={(e) => openDropdown(e, -1)}
+                        className="flex items-center justify-center ml-[-2px] p-[2px] rounded hover:bg-[#ebebeb] transition-colors text-[#949494] hover:text-[#1e1e1e]"
+                      >
+                        <ChevronDown className="size-[16px]" />
+                      </button>
+                    )}
+                    {titleFolders && crumbDropdown(titleFolders, -1)}
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            ) : (
+              <p className="font-['Satoshi-Bold',sans-serif] leading-[28px] not-italic text-[#1e1e1e] text-[24px] whitespace-nowrap">{title}</p>
+            )}
           </div>
         </div>
         <div className="flex gap-[12px] items-center justify-end shrink-0">
@@ -394,7 +498,7 @@ function ActionBar({ title, onBack, onMoreActionsClick, buttonRef }: ActionBarPr
           >
             <div aria-hidden="true" className="absolute border border-[#1b55f5] border-solid inset-0 pointer-events-none rounded-[4px]" />
             <span className="font-['Satoshi-Medium',sans-serif] not-italic text-[#1b55f5] text-[16px] whitespace-nowrap">More actions</span>
-            <ChevronDown color="#1B55F5" />
+            <ChevronDownIcon color="#1B55F5" />
           </div>
         </div>
       </div>
@@ -938,16 +1042,26 @@ function FolderItem({
   onEnter,
   onDelete,
   onRename,
+  onMoveTo,
+  getMoveTargets,
+  getMoveDisabledReason,
 }: {
   folder: FolderData;
   onEnter: (id: number) => void;
   onDelete: (id: number) => void;
   onRename: (id: number, name: string) => void;
+  onMoveTo?: (id: number, targetId: number) => void;
+  getMoveTargets?: (folder: FolderData) => { id: number; name: string }[];
+  getMoveDisabledReason?: (folder: FolderData) => string | undefined;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [draftName, setDraftName] = useState(folder.name);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showMoveToMenu, setShowMoveToMenu] = useState(false);
+  const moveTargets = getMoveTargets ? getMoveTargets(folder) : [];
+  const moveDisabledReason = getMoveDisabledReason?.(folder);
+  const showMoveTo = (onMoveTo && moveTargets.length > 0) || !!moveDisabledReason;
   const menuRef = useRef<HTMLDivElement>(null);
   const ellipsisRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -972,7 +1086,8 @@ function FolderItem({
     }
   }, [isRenaming]);
 
-  const startRename = () => { setDraftName(folder.name); setIsRenaming(true); setMenuOpen(false); };
+  const closeMenu = () => { setMenuOpen(false); setShowMoveToMenu(false); };
+  const startRename = () => { setDraftName(folder.name); setIsRenaming(true); closeMenu(); };
   const commitRename = () => { const t = draftName.trim(); if (t) onRename(folder.id, t); setIsRenaming(false); };
   const cancelRename = () => { setDraftName(folder.name); setIsRenaming(false); };
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -1023,8 +1138,8 @@ function FolderItem({
       ) : (
         <div
           ref={ellipsisRef}
-          onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
-          className="flex items-center justify-center relative shrink-0 size-[28px] rounded-[4px] hover:bg-[#f0f0f0] transition-colors opacity-0 group-hover/folder:opacity-100"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); setShowMoveToMenu(false); }}
+          className={`flex items-center justify-center relative shrink-0 size-[28px] rounded-[4px] hover:bg-[#f0f0f0] transition-colors ${menuOpen ? "opacity-100" : "opacity-0 group-hover/folder:opacity-100"}`}
         >
           <svg className="block" fill="none" width="12" height="2" viewBox="0 0 12 2">
             <path d={docSvgPaths.pf2a5c00} fill="#3C3C3B" />
@@ -1035,30 +1150,77 @@ function FolderItem({
               onClick={(e) => e.stopPropagation()}
               className="absolute top-[calc(100%+4px)] right-0 bg-white rounded-[6px] shadow-[0px_5px_15px_0px_rgba(30,30,30,0.12)] border border-[#e4e4e4] flex flex-col gap-[2px] p-[4px] w-[160px] z-50"
             >
-              {[
-                { label: "Rename", danger: false },
-                { label: "Share", danger: false },
-                { label: "Duplicate", danger: false },
-                { label: "Delete", danger: true },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  onClick={() => {
-                    if (item.label === "Delete") {
-                      setMenuOpen(false);
-                      if (folder.assets.length === 0) {
-                        onDelete(folder.id);
-                      } else {
-                        setShowDeleteModal(true);
-                      }
-                    } else if (item.label === "Rename") { startRename(); }
-                    else { setMenuOpen(false); }
-                  }}
-                  className={`flex items-center px-[10px] h-[36px] rounded-[4px] cursor-pointer transition-colors ${item.danger ? "hover:bg-[#fff0f0] text-[#e53e3e]" : "hover:bg-[#f5f5f5] text-[#1e1e1e]"}`}
-                >
-                  <span className="font-['Satoshi-Medium',sans-serif] text-[14px]">{item.label}</span>
-                </div>
-              ))}
+              {showMoveToMenu ? (
+                <>
+                  <div
+                    onClick={() => setShowMoveToMenu(false)}
+                    className="flex items-center gap-[4px] px-[8px] h-[32px] rounded-[4px] cursor-pointer hover:bg-[#f5f5f5] text-[#949494] mb-[2px]"
+                  >
+                    <ChevronLeft size={14} />
+                    <span className="font-['Satoshi-Medium',sans-serif] text-[12px] uppercase tracking-[0.5px]">Move to</span>
+                  </div>
+                  {moveTargets.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => { onMoveTo!(folder.id, t.id); closeMenu(); }}
+                      className="flex items-center px-[10px] h-[36px] rounded-[4px] cursor-pointer hover:bg-[#f5f5f5] text-[#1e1e1e]"
+                    >
+                      <span className="font-['Satoshi-Medium',sans-serif] text-[14px] truncate">{t.name}</span>
+                    </div>
+                  ))}
+                  {moveTargets.length === 0 && (
+                    <div className="flex items-center px-[10px] h-[36px] text-[#949494]">
+                      <span className="font-['Satoshi-Medium',sans-serif] text-[13px]">No folders available</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {[
+                    { label: "Rename", danger: false },
+                    { label: "Share", danger: false },
+                    { label: "Duplicate", danger: false },
+                    { label: "Delete", danger: true },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      onClick={() => {
+                        if (item.label === "Delete") {
+                          closeMenu();
+                          if (folder.assets.length === 0) {
+                            onDelete(folder.id);
+                          } else {
+                            setShowDeleteModal(true);
+                          }
+                        } else if (item.label === "Rename") { startRename(); }
+                        else { closeMenu(); }
+                      }}
+                      className={`flex items-center px-[10px] h-[36px] rounded-[4px] cursor-pointer transition-colors ${item.danger ? "hover:bg-[#fff0f0] text-[#e53e3e]" : "hover:bg-[#f5f5f5] text-[#1e1e1e]"}`}
+                    >
+                      <span className="font-['Satoshi-Medium',sans-serif] text-[14px]">{item.label}</span>
+                    </div>
+                  ))}
+                  {showMoveTo && (
+                    moveDisabledReason ? (
+                      <div className="relative group/moveto">
+                        <div className="flex items-center px-[10px] h-[36px] rounded-[4px] cursor-not-allowed">
+                          <span className="font-['Satoshi-Medium',sans-serif] text-[14px] text-[#c0c0c0]">Move to</span>
+                        </div>
+                        <div className="pointer-events-none absolute bottom-[calc(100%+4px)] left-0 hidden group-hover/moveto:block bg-[#f0f0f0] text-[#1e1e1e] border border-[#e4e4e4] shadow-sm rounded-[6px] px-[10px] py-[6px] z-[200] w-[220px] leading-snug">
+                          <span className="font-['Satoshi-Medium',sans-serif] text-[13px]">{moveDisabledReason}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => setShowMoveToMenu(true)}
+                        className="flex items-center px-[10px] h-[36px] rounded-[4px] cursor-pointer hover:bg-[#f5f5f5] text-[#1e1e1e]"
+                      >
+                        <span className="font-['Satoshi-Medium',sans-serif] text-[14px]">Move to</span>
+                      </div>
+                    )
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>
@@ -1082,11 +1244,17 @@ function FoldersSection({
   onEnter,
   onDelete,
   onRename,
+  onMoveTo,
+  getMoveTargets,
+  getMoveDisabledReason,
 }: {
   folders: FolderData[];
   onEnter: (id: number) => void;
   onDelete: (id: number) => void;
   onRename: (id: number, name: string) => void;
+  onMoveTo?: (id: number, targetId: number) => void;
+  getMoveTargets?: (folder: FolderData) => { id: number; name: string }[];
+  getMoveDisabledReason?: (folder: FolderData) => string | undefined;
 }) {
   return (
     <div className="flex flex-col gap-[12px] items-start shrink-0 w-full">
@@ -1094,7 +1262,7 @@ function FoldersSection({
       <div className="content-start grid grid-cols-4 gap-x-[24px] gap-y-[16px] items-start w-full">
         {folders.map((folder) => (
           <div key={folder.id} className="min-w-0">
-            <FolderItem folder={folder} onEnter={onEnter} onDelete={onDelete} onRename={onRename} />
+            <FolderItem folder={folder} onEnter={onEnter} onDelete={onDelete} onRename={onRename} onMoveTo={onMoveTo} getMoveTargets={getMoveTargets} getMoveDisabledReason={getMoveDisabledReason} />
           </div>
         ))}
       </div>
@@ -1117,6 +1285,7 @@ export default function MediaTransferInterface() {
   const [folders, setFolders] = useState<FolderData[]>([]);
   const [nextFolderId, setNextFolderId] = useState(1);
   const [activeFolderId, setActiveFolderId] = useState<number | null>(null);
+  const [activeSubFolderId, setActiveSubFolderId] = useState<number | null>(null);
   const [moveDropdown, setMoveDropdown] = useState<MoveDropdownState | null>(null);
   const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set());
   const [bulkMovePos, setBulkMovePos] = useState<{ x: number; y: number } | null>(null);
@@ -1128,10 +1297,22 @@ export default function MediaTransferInterface() {
   const activeFolder = activeFolderId !== null
     ? folders.find((f) => f.id === activeFolderId) ?? null
     : null;
+  const activeSubFolder = activeSubFolderId !== null && activeFolder !== null
+    ? activeFolder.subfolders.find((f) => f.id === activeSubFolderId) ?? null
+    : null;
 
   const handleAddFolder = () => {
-    const newFolder: FolderData = { id: nextFolderId, name: `Folder ${nextFolderId}`, assets: [] };
+    const newFolder: FolderData = { id: nextFolderId, name: `Folder ${nextFolderId}`, assets: [], subfolders: [] };
     setFolders((prev) => [newFolder, ...prev]);
+    setNextFolderId((n) => n + 1);
+    setIsDropdownOpen(false);
+  };
+
+  const handleAddSubFolder = () => {
+    const newSub: FolderData = { id: nextFolderId, name: `Folder ${nextFolderId}`, assets: [], subfolders: [] };
+    setFolders((prev) => prev.map((f) =>
+      f.id === activeFolderId ? { ...f, subfolders: [newSub, ...f.subfolders] } : f
+    ));
     setNextFolderId((n) => n + 1);
     setIsDropdownOpen(false);
   };
@@ -1141,10 +1322,69 @@ export default function MediaTransferInterface() {
     if (activeFolderId === id) setActiveFolderId(null);
   };
 
-  const handleEnterFolder = (id: number) => { setActiveFolderId(id); setIsDropdownOpen(false); setSelectedAssets(new Set()); };
-  const handleBack = () => { setActiveFolderId(null); setIsDropdownOpen(false); setSelectedAssets(new Set()); };
+  const handleDeleteSubFolder = (id: number) => {
+    setFolders((prev) => prev.map((f) =>
+      f.id === activeFolderId ? { ...f, subfolders: f.subfolders.filter((s) => s.id !== id) } : f
+    ));
+    if (activeSubFolderId === id) setActiveSubFolderId(null);
+  };
+
+  const handleEnterFolder = (id: number) => { setActiveFolderId(id); setActiveSubFolderId(null); setIsDropdownOpen(false); setSelectedAssets(new Set()); };
+  const handleEnterSubFolder = (id: number) => { setActiveSubFolderId(id); setIsDropdownOpen(false); setSelectedAssets(new Set()); };
+  const handleBack = () => {
+    if (activeSubFolderId !== null) {
+      setActiveSubFolderId(null);
+    } else {
+      setActiveFolderId(null);
+    }
+    setIsDropdownOpen(false);
+    setSelectedAssets(new Set());
+  };
+  const handleNavigateToRoot = () => { setActiveFolderId(null); setActiveSubFolderId(null); setIsDropdownOpen(false); setSelectedAssets(new Set()); };
+
   const handleRenameFolder = (id: number, name: string) => {
     setFolders((prev) => prev.map((f) => f.id === id ? { ...f, name } : f));
+  };
+  // Move a root-level folder (no subfolders) into another root folder as a subfolder
+  const handleMoveFolderToFolder = (folderId: number, targetId: number) => {
+    const folderToMove = folders.find((f) => f.id === folderId);
+    if (!folderToMove) return;
+    setFolders((prev) =>
+      prev
+        .filter((f) => f.id !== folderId)
+        .map((f) => f.id === targetId ? { ...f, subfolders: [...f.subfolders, folderToMove] } : f)
+    );
+    if (activeFolderId === folderId) { setActiveFolderId(null); setActiveSubFolderId(null); }
+  };
+
+  // Move a subfolder to another root folder, or back to workspace (targetId === -1)
+  const handleMoveSubFolderToFolder = (subFolderId: number, targetId: number) => {
+    const subFolderToMove = folders.find((f) => f.id === activeFolderId)?.subfolders.find((s) => s.id === subFolderId);
+    if (!subFolderToMove) return;
+    if (targetId === -1) {
+      // Move to workspace (becomes a root folder)
+      setFolders((prev) => [
+        ...prev.map((f) =>
+          f.id === activeFolderId ? { ...f, subfolders: f.subfolders.filter((s) => s.id !== subFolderId) } : f
+        ),
+        subFolderToMove,
+      ]);
+    } else {
+      setFolders((prev) => prev.map((f) => {
+        if (f.id === activeFolderId) return { ...f, subfolders: f.subfolders.filter((s) => s.id !== subFolderId) };
+        if (f.id === targetId) return { ...f, subfolders: [...f.subfolders, subFolderToMove] };
+        return f;
+      }));
+    }
+    if (activeSubFolderId === subFolderId) setActiveSubFolderId(null);
+  };
+
+  const handleRenameSubFolder = (id: number, name: string) => {
+    setFolders((prev) => prev.map((f) =>
+      f.id === activeFolderId
+        ? { ...f, subfolders: f.subfolders.map((s) => s.id === id ? { ...s, name } : s) }
+        : f
+    ));
   };
 
   // ── Selection ──
@@ -1166,7 +1406,21 @@ export default function MediaTransferInterface() {
 
   const handleBulkMove = (destination: number | null) => {
     const ids = Array.from(selectedAssets);
-    if (isInsideFolder && activeFolder) {
+    if (isInsideSubFolder && activeSubFolder && activeFolder) {
+      const assetsToMove = activeSubFolder.assets.filter((a) => ids.includes(a.id));
+      setFolders((prev) => prev.map((f) => {
+        if (f.id === activeFolderId) {
+          const updatedSubs = f.subfolders.map((s) =>
+            s.id === activeSubFolderId ? { ...s, assets: s.assets.filter((a) => !ids.includes(a.id)) } : s
+          );
+          if (destination !== null && destination === f.id) return { ...f, assets: [...f.assets, ...assetsToMove], subfolders: updatedSubs };
+          return { ...f, subfolders: updatedSubs };
+        }
+        if (destination !== null && f.id === destination) return { ...f, assets: [...f.assets, ...assetsToMove] };
+        return f;
+      }));
+      if (destination === null) setWorkspaceAssets((prev) => [...prev, ...assetsToMove]);
+    } else if (isInsideFolder && activeFolder) {
       const assetsToMove = activeFolder.assets.filter((a) => ids.includes(a.id));
       if (destination === null) {
         setFolders((prev) => prev.map((f) =>
@@ -1196,16 +1450,33 @@ export default function MediaTransferInterface() {
   const handleBulkCreateFolder = () => {
     const ids = Array.from(selectedAssets);
     let assetsToMove: CardData[];
-    if (isInsideFolder && activeFolder) {
+    if (isInsideSubFolder && activeSubFolder && activeFolder) {
+      // Create new subfolder within parent folder
+      assetsToMove = activeSubFolder.assets.filter((a) => ids.includes(a.id));
+      const newSub: FolderData = { id: nextFolderId, name: `Folder ${nextFolderId}`, assets: assetsToMove, subfolders: [] };
+      setFolders((prev) => prev.map((f) =>
+        f.id === activeFolderId
+          ? {
+              ...f,
+              subfolders: [
+                newSub,
+                ...f.subfolders.map((s) =>
+                  s.id === activeSubFolderId ? { ...s, assets: s.assets.filter((a) => !ids.includes(a.id)) } : s
+                ),
+              ],
+            }
+          : f
+      ));
+    } else if (isInsideFolder && activeFolder) {
       assetsToMove = activeFolder.assets.filter((a) => ids.includes(a.id));
-      const newFolder: FolderData = { id: nextFolderId, name: `Folder ${nextFolderId}`, assets: assetsToMove };
+      const newFolder: FolderData = { id: nextFolderId, name: `Folder ${nextFolderId}`, assets: assetsToMove, subfolders: [] };
       setFolders((prev) => [
         newFolder,
         ...prev.map((f) => f.id === activeFolderId ? { ...f, assets: f.assets.filter((a) => !ids.includes(a.id)) } : f),
       ]);
     } else {
       assetsToMove = workspaceAssets.filter((a) => ids.includes(a.id));
-      const newFolder: FolderData = { id: nextFolderId, name: `Folder ${nextFolderId}`, assets: assetsToMove };
+      const newFolder: FolderData = { id: nextFolderId, name: `Folder ${nextFolderId}`, assets: assetsToMove, subfolders: [] };
       setWorkspaceAssets((prev) => prev.filter((a) => !ids.includes(a.id)));
       setFolders((prev) => [newFolder, ...prev]);
     }
@@ -1225,18 +1496,31 @@ export default function MediaTransferInterface() {
     const assetId = moveDropdown.assetId;
     let asset: CardData | undefined;
 
-    if (isInsideFolder && activeFolder) {
+    if (isInsideSubFolder && activeSubFolder && activeFolder) {
+      asset = activeSubFolder.assets.find((a) => a.id === assetId);
+      if (!asset) { setMoveDropdown(null); return; }
+      setFolders((prev) => prev.map((f) => {
+        if (f.id === activeFolderId) {
+          const updatedSubs = f.subfolders.map((s) =>
+            s.id === activeSubFolderId ? { ...s, assets: s.assets.filter((a) => a.id !== assetId) } : s
+          );
+          if (destination === f.id) return { ...f, assets: [...f.assets, asset!], subfolders: updatedSubs };
+          return { ...f, subfolders: updatedSubs };
+        }
+        if (destination !== null && f.id === destination) return { ...f, assets: [...f.assets, asset!] };
+        return f;
+      }));
+      if (destination === null) setWorkspaceAssets((prev) => [...prev, asset!]);
+    } else if (isInsideFolder && activeFolder) {
       // Source: current folder
       asset = activeFolder.assets.find((a) => a.id === assetId);
       if (!asset) { setMoveDropdown(null); return; }
       if (destination === null) {
-        // folder → workspace
         setFolders((prev) => prev.map((f) =>
           f.id === activeFolderId ? { ...f, assets: f.assets.filter((a) => a.id !== assetId) } : f
         ));
         setWorkspaceAssets((prev) => [...prev, asset!]);
       } else {
-        // folder → another folder (single atomic update)
         setFolders((prev) => prev.map((f) => {
           if (f.id === activeFolderId) return { ...f, assets: f.assets.filter((a) => a.id !== assetId) };
           if (f.id === destination) return { ...f, assets: [...f.assets, asset!] };
@@ -1262,10 +1546,27 @@ export default function MediaTransferInterface() {
     const assetId = moveDropdown.assetId;
     let asset: CardData | undefined;
 
-    if (isInsideFolder && activeFolder) {
+    if (isInsideSubFolder && activeSubFolder && activeFolder) {
+      asset = activeSubFolder.assets.find((a) => a.id === assetId);
+      if (!asset) { setMoveDropdown(null); return; }
+      const newSub: FolderData = { id: nextFolderId, name: `Folder ${nextFolderId}`, assets: [asset], subfolders: [] };
+      setFolders((prev) => prev.map((f) =>
+        f.id === activeFolderId
+          ? {
+              ...f,
+              subfolders: [
+                newSub,
+                ...f.subfolders.map((s) =>
+                  s.id === activeSubFolderId ? { ...s, assets: s.assets.filter((a) => a.id !== assetId) } : s
+                ),
+              ],
+            }
+          : f
+      ));
+    } else if (isInsideFolder && activeFolder) {
       asset = activeFolder.assets.find((a) => a.id === assetId);
       if (!asset) { setMoveDropdown(null); return; }
-      const newFolder: FolderData = { id: nextFolderId, name: `Folder ${nextFolderId}`, assets: [asset] };
+      const newFolder: FolderData = { id: nextFolderId, name: `Folder ${nextFolderId}`, assets: [asset], subfolders: [] };
       setFolders((prev) => [
         newFolder,
         ...prev.map((f) => f.id === activeFolderId ? { ...f, assets: f.assets.filter((a) => a.id !== assetId) } : f),
@@ -1273,7 +1574,7 @@ export default function MediaTransferInterface() {
     } else {
       asset = workspaceAssets.find((a) => a.id === assetId);
       if (!asset) { setMoveDropdown(null); return; }
-      const newFolder: FolderData = { id: nextFolderId, name: `Folder ${nextFolderId}`, assets: [asset] };
+      const newFolder: FolderData = { id: nextFolderId, name: `Folder ${nextFolderId}`, assets: [asset], subfolders: [] };
       setWorkspaceAssets((prev) => prev.filter((a) => a.id !== assetId));
       setFolders((prev) => [newFolder, ...prev]);
     }
@@ -1295,9 +1596,36 @@ export default function MediaTransferInterface() {
   }, [isDropdownOpen]);
 
   const isInsideFolder = activeFolderId !== null && activeFolder !== null;
-  const currentAssets = isInsideFolder ? activeFolder.assets : workspaceAssets;
-  const currentTitle = isInsideFolder ? activeFolder.name : "Workspace title";
+  const isInsideSubFolder = isInsideFolder && activeSubFolderId !== null && activeSubFolder !== null;
+  const currentAssets = isInsideSubFolder ? activeSubFolder!.assets : isInsideFolder ? activeFolder!.assets : workspaceAssets;
+  const currentTitle = isInsideSubFolder ? activeSubFolder!.name : isInsideFolder ? activeFolder!.name : "Workspace title";
   const hasSelection = selectedAssets.size > 0;
+
+  // Breadcrumb items for ActionBar (ancestors, not the current page)
+  const rootFolderOptions: FolderOption[] = folders.map((f) => ({
+    id: f.id, name: f.name, isCurrent: f.id === activeFolderId,
+    onClick: () => handleEnterFolder(f.id),
+  }));
+  const subFolderOptions: FolderOption[] = activeFolder?.subfolders.map((s) => ({
+    id: s.id, name: s.name, isCurrent: s.id === activeSubFolderId,
+    onClick: () => handleEnterSubFolder(s.id),
+  })) ?? [];
+
+  const breadcrumbItems: BreadcrumbCrumb[] = isInsideSubFolder
+    ? [
+        { label: "Workspace", onClick: handleNavigateToRoot },
+        { label: activeFolder!.name, onClick: handleBack, folders: rootFolderOptions },
+      ]
+    : isInsideFolder
+    ? [{ label: "Workspace", onClick: handleBack }]
+    : [];
+
+  // Title dropdown: sibling folders at the current level
+  const titleFolders: FolderOption[] = isInsideSubFolder
+    ? subFolderOptions
+    : isInsideFolder
+    ? rootFolderOptions
+    : [];
 
   const handleSelectAll = () => setSelectedAssets(new Set(currentAssets.map((a) => a.id)));
 
@@ -1309,6 +1637,8 @@ export default function MediaTransferInterface() {
         <div className="flex flex-col gap-[40px] items-start px-[80px] py-[40px] size-full">
           <ActionBar
             title={currentTitle}
+            titleFolders={titleFolders}
+            breadcrumbItems={breadcrumbItems}
             onBack={handleBack}
             onMoreActionsClick={() => setIsDropdownOpen((v) => !v)}
             buttonRef={buttonRef}
@@ -1333,6 +1663,26 @@ export default function MediaTransferInterface() {
                 onEnter={handleEnterFolder}
                 onDelete={handleDeleteFolder}
                 onRename={handleRenameFolder}
+                onMoveTo={handleMoveFolderToFolder}
+                getMoveTargets={(folder) => folders.filter((f) => f.id !== folder.id)}
+                getMoveDisabledReason={(folder) =>
+                  folder.subfolders.length > 0
+                    ? "This folder can't be moved because it contains subfolders. The max folder depth is 2 levels."
+                    : undefined
+                }
+              />
+            )}
+            {isInsideFolder && !isInsideSubFolder && activeFolder && activeFolder.subfolders.length > 0 && (
+              <FoldersSection
+                folders={activeFolder.subfolders}
+                onEnter={handleEnterSubFolder}
+                onDelete={handleDeleteSubFolder}
+                onRename={handleRenameSubFolder}
+                onMoveTo={handleMoveSubFolderToFolder}
+                getMoveTargets={(_folder) => [
+                  { id: -1, name: "Workspace" },
+                  ...folders.filter((f) => f.id !== activeFolderId),
+                ]}
               />
             )}
 
@@ -1350,7 +1700,7 @@ export default function MediaTransferInterface() {
         <DropdownMenu
           dropdownRef={dropdownRef}
           buttonRef={buttonRef}
-          onAddFolder={!isInsideFolder ? handleAddFolder : undefined}
+          onAddFolder={isInsideSubFolder ? undefined : isInsideFolder ? handleAddSubFolder : handleAddFolder}
         />
       )}
 
