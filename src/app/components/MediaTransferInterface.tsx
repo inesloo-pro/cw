@@ -1860,7 +1860,7 @@ export default function MediaTransferInterface() {
       <Navigation />
 
       <div className="flex-1 min-h-px min-w-px relative w-full">
-        <div className="flex flex-col gap-[40px] items-start px-[80px] py-[40px] size-full">
+        <div className="flex flex-col gap-[40px] items-start px-[80px] pt-[40px] pb-[80px] size-full">
           <ActionBar
             title={currentTitle}
             titleFolders={titleFolders}
