@@ -1280,7 +1280,7 @@ function FolderItem({
           <p className="font-['Satoshi-Bold',sans-serif] leading-[normal] text-[#1f1f1e] text-[14px] truncate w-full">{folder.name}</p>
         )}
         <p className="font-['Satoshi-Medium',sans-serif] leading-[normal] text-[#1f1f1e] text-[12px]">
-          <span>{folder.assets.length} asset{folder.assets.length !== 1 ? "s" : ""} · Added by </span>
+          <span>{folder.assets.length} asset{folder.assets.length !== 1 ? "s" : ""}{folder.subfolders.length > 0 ? ` · ${folder.subfolders.length} subfolder${folder.subfolders.length !== 1 ? "s" : ""}` : ""} · Added by </span>
           <span className="font-['Satoshi-Medium',sans-serif]">Emilie</span>
         </p>
       </div>
