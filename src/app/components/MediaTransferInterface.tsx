@@ -181,14 +181,17 @@ function DropdownMenu({ dropdownRef, buttonRef, onAddFolder }: DropdownMenuProps
 interface AddToFolderDropdownProps {
   folders: FolderData[];
   currentFolderId: number | null;
+  currentSubFolderId?: number | null;
   position: { x: number; y: number };
-  onSelect: (destination: number | null) => void;
+  onSelect: (folderId: number | null, subFolderId?: number) => void;
   onCreateFolder: () => void;
   onClose: () => void;
 }
 
-function AddToFolderDropdown({ folders, currentFolderId, position, onSelect, onCreateFolder, onClose }: AddToFolderDropdownProps) {
+function AddToFolderDropdown({ folders, currentFolderId, currentSubFolderId, position, onSelect, onCreateFolder, onClose }: AddToFolderDropdownProps) {
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<"root" | "folder">("root");
+  const [drillFolder, setDrillFolder] = useState<FolderData | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState(position);
 
@@ -214,23 +217,137 @@ function AddToFolderDropdown({ folders, currentFolderId, position, onSelect, onC
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
-  const filtered = folders.filter((f) =>
-    f.name.toLowerCase().includes(search.toLowerCase())
-  );
+  // Determine current location label
+  const currentFolder = currentFolderId !== null ? folders.find((f) => f.id === currentFolderId) ?? null : null;
+  const currentSubFolder = currentFolder && currentSubFolderId ? currentFolder.subfolders.find((s) => s.id === currentSubFolderId) ?? null : null;
+  const currentLocationLabel = currentSubFolder
+    ? `${currentFolder!.name} / ${currentSubFolder.name}`
+    : currentFolder
+    ? currentFolder.name
+    : "Workspace";
 
+  const containerClass = "fixed z-[100] bg-white rounded-[4px] w-[280px] flex flex-col overflow-hidden";
+  const containerStyle: React.CSSProperties = {
+    top: pos.y,
+    left: pos.x,
+    boxShadow: "0px 5px 15px 0px rgba(30,30,30,0.05)",
+    border: "1px solid #e4e4e4",
+  };
+
+  // ── SUBFOLDER VIEW ──────────────────────────────────────────────────────────
+  if (view === "folder" && drillFolder) {
+    const filteredSubs = drillFolder.subfolders.filter((s) =>
+      s.name.toLowerCase().includes(search.toLowerCase())
+    );
+    return (
+      <div ref={ref} className={containerClass} style={containerStyle}>
+        {/* Header: back arrow + folder name bold + close */}
+        <div className="flex items-center px-[12px] py-[4px] h-[48px] shrink-0 gap-[8px]">
+          <button
+            onClick={() => { setView("root"); setDrillFolder(null); setSearch(""); }}
+            className="flex items-center justify-center size-[20px] rounded-[3px] hover:bg-[#f5f5f5] transition-colors shrink-0"
+          >
+            <svg fill="none" width="7" height="13" viewBox="0 0 6.997 12.997" style={{ transform: "rotate(180deg)" }}>
+              <path d={dropdownSvgPaths.p3c2d8400} fill="#1E1E1E" />
+            </svg>
+          </button>
+          <span className="font-['Satoshi-Bold',sans-serif] text-[#1e1e1e] text-[16px] flex-1 truncate">{drillFolder.name}</span>
+          <button
+            onClick={onClose}
+            className="flex items-center justify-center size-[20px] rounded-[3px] hover:bg-[#f5f5f5] transition-colors shrink-0"
+          >
+            <svg className="block" fill="none" width="10" height="10" viewBox="0 0 9.984 9.984">
+              <path d={dropdownSvgPaths.p5391080} fill="#1E1E1E" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-[#e4e4e4] shrink-0" />
+
+        {/* Search */}
+        <div className="px-[16px] py-[8px] shrink-0">
+          <div className="flex gap-[8px] items-center">
+            <svg className="shrink-0" fill="none" width="14" height="14" viewBox="0 0 14 14">
+              <path d={dropdownSvgPaths.p3c9d1dc0} fill="#949494" />
+            </svg>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search"
+              className="font-['Montserrat:Medium',sans-serif] text-[16px] text-[#1e1e1e] placeholder-[#949494] outline-none bg-transparent flex-1 min-w-0"
+            />
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-[#e4e4e4] shrink-0" />
+
+        {/* Subfolder list */}
+        <div className="flex gap-[4px] p-[4px] max-h-[220px] overflow-hidden">
+          <div className="flex flex-col gap-[0px] flex-1 overflow-y-auto">
+            {filteredSubs.length === 0 && search !== "" ? (
+              <div className="flex items-center px-[4px] py-[12px]">
+                <span className="font-['Satoshi-Medium',sans-serif] text-[#949494] text-[14px]">No subfolders match</span>
+              </div>
+            ) : filteredSubs.length === 0 ? (
+              <div className="flex items-center px-[4px] py-[4px]">
+                <span className="font-['Satoshi-Medium',sans-serif] text-[#949494] text-[14px]">No subfolders</span>
+              </div>
+            ) : (
+              filteredSubs.map((sub) => {
+                const isCurrent = sub.id === currentSubFolderId && drillFolder.id === currentFolderId;
+                return (
+                  <div
+                    key={sub.id}
+                    onClick={isCurrent ? undefined : () => onSelect(drillFolder.id, sub.id)}
+                    className={`flex items-center justify-between pl-[4px] pr-[12px] h-[48px] rounded-[2px] transition-colors group/fi ${
+                      isCurrent ? "cursor-default opacity-40" : "cursor-pointer hover:bg-[#f5f5f5]"
+                    }`}
+                  >
+                    <span className={`font-['Satoshi-Regular',sans-serif] text-[#1e1e1e] text-[16px] transition-colors ${!isCurrent ? "group-hover/fi:text-[#1463FF]" : ""}`}>{sub.name}</span>
+                    {!isCurrent && (
+                      <svg className="shrink-0 opacity-0 group-hover/fi:opacity-100 transition-opacity" fill="none" width="7" height="13" viewBox="0 0 6.997 12.997">
+                        <path d={dropdownSvgPaths.p3c2d8400} fill="#1463FF" />
+                      </svg>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+          {filteredSubs.length > 4 && (
+            <div className="bg-[#e4e4e4] flex flex-col items-center rounded-[2px] self-stretch shrink-0 w-[3px]">
+              <div className="bg-[#949494] h-[40px] rounded-[100px] w-full" />
+            </div>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-[#e4e4e4] shrink-0" />
+
+        {/* Create new folder */}
+        <div className="p-[4px] shrink-0">
+          <button
+            onClick={onCreateFolder}
+            className="group flex items-center gap-[12px] w-full p-[16px] rounded-[4px] hover:bg-[#f0f4ff] transition-colors"
+          >
+            <svg className="shrink-0" fill="none" width="13" height="13" viewBox="0 0 13 13">
+              <path d={dropdownSvgPaths.p226e2c00} fill="#1463FF" />
+            </svg>
+            <span className="font-['Satoshi-Regular',sans-serif] text-[#1e1e1e] text-[16px] group-hover:text-[#1463FF] transition-colors">Create new folder</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── ROOT VIEW ───────────────────────────────────────────────────────────────
   const isInWorkspace = currentFolderId === null;
+  const filtered = folders.filter((f) => f.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div
-      ref={ref}
-      className="fixed z-[100] bg-white rounded-[4px] w-[280px] flex flex-col overflow-hidden"
-      style={{
-        top: pos.y,
-        left: pos.x,
-        boxShadow: "0px 5px 15px 0px rgba(30,30,30,0.05)",
-        border: "1px solid #e4e4e4",
-      }}
-    >
+    <div ref={ref} className={containerClass} style={containerStyle}>
       {/* Header */}
       <div className="flex items-center justify-between px-[16px] py-[4px] h-[48px] shrink-0">
         <span className="font-['Satoshi-Medium',sans-serif] text-[#1e1e1e] text-[16px]">Move to</span>
@@ -265,23 +382,28 @@ function AddToFolderDropdown({ folders, currentFolderId, position, onSelect, onC
       {/* Divider */}
       <div className="h-px bg-[#e4e4e4] shrink-0" />
 
-      {/* List: Workspace + Folders */}
+      {/* List: Current location + Workspace + Folders */}
       <div className="flex gap-[4px] p-[4px] max-h-[220px] overflow-hidden">
         <div className="flex flex-col gap-[0px] flex-1 overflow-y-auto">
-          {/* Workspace — always first, greyed if already there */}
-          {("workspace".includes(search.toLowerCase()) || search === "") && (
+
+          {/* Current location — always first, hidden during search */}
+          {search === "" && (
+            <div className="flex items-center justify-between pl-[4px] pr-[12px] h-[48px] rounded-[2px] cursor-default">
+              <span className="font-['Satoshi-Regular',sans-serif] text-[#949494] text-[16px] truncate">{currentLocationLabel}</span>
+              <span className="font-['Satoshi-Medium',sans-serif] text-[#c0c0c0] text-[11px] shrink-0 ml-[6px]">current</span>
+            </div>
+          )}
+
+          {/* Workspace — shown if not current location */}
+          {("workspace".includes(search.toLowerCase()) || search === "") && !isInWorkspace && (
             <div
-              onClick={isInWorkspace ? undefined : () => onSelect(null)}
-              className={`flex items-center justify-between pl-[4px] pr-[12px] h-[48px] rounded-[2px] transition-colors group/fi ${
-                isInWorkspace ? "cursor-default opacity-40" : "cursor-pointer hover:bg-[#f5f5f5]"
-              }`}
+              onClick={() => onSelect(null)}
+              className="flex items-center justify-between pl-[4px] pr-[12px] h-[48px] rounded-[2px] cursor-pointer hover:bg-[#f5f5f5] transition-colors group/fi"
             >
               <span className="font-['Satoshi-Regular',sans-serif] text-[#1e1e1e] text-[16px] group-hover/fi:text-[#1463FF] transition-colors">Workspace</span>
-              {!isInWorkspace && (
-                <svg className="shrink-0 opacity-0 group-hover/fi:opacity-100 transition-opacity" fill="none" width="7" height="13" viewBox="0 0 6.997 12.997">
-                  <path d={dropdownSvgPaths.p3c2d8400} fill="#1e1e1e" />
-                </svg>
-              )}
+              <svg className="shrink-0 opacity-0 group-hover/fi:opacity-100 transition-opacity" fill="none" width="7" height="13" viewBox="0 0 6.997 12.997">
+                <path d={dropdownSvgPaths.p3c2d8400} fill="#1463FF" />
+              </svg>
             </div>
           )}
 
@@ -292,21 +414,30 @@ function AddToFolderDropdown({ folders, currentFolderId, position, onSelect, onC
             </div>
           ) : (
             filtered.map((folder) => {
-              const isCurrent = folder.id === currentFolderId;
+              // Skip the current root folder (already shown at top as "current") when not in a subfolder
+              const isCurrent = folder.id === currentFolderId && !currentSubFolderId;
+              if (isCurrent) return null;
+              const hasSubfolders = folder.subfolders.length > 0;
               return (
                 <div
                   key={folder.id}
-                  onClick={isCurrent ? undefined : () => onSelect(folder.id)}
-                  className={`flex items-center justify-between pl-[4px] pr-[12px] h-[48px] rounded-[2px] transition-colors group/fi ${
-                    isCurrent ? "cursor-default opacity-40" : "cursor-pointer hover:bg-[#f5f5f5]"
-                  }`}
+                  onClick={
+                    hasSubfolders
+                      ? () => { setDrillFolder(folder); setView("folder"); setSearch(""); }
+                      : () => onSelect(folder.id)
+                  }
+                  className="flex items-center justify-between pl-[4px] pr-[12px] h-[48px] rounded-[2px] cursor-pointer hover:bg-[#f5f5f5] transition-colors group/fi"
                 >
                   <span className="font-['Satoshi-Regular',sans-serif] text-[#1e1e1e] text-[16px] group-hover/fi:text-[#1463FF] transition-colors">{folder.name}</span>
-                  {!isCurrent && (
-                    <svg className="shrink-0 opacity-0 group-hover/fi:opacity-100 transition-opacity" fill="none" width="7" height="13" viewBox="0 0 6.997 12.997">
-                      <path d={dropdownSvgPaths.p3c2d8400} fill="#1463FF" />
-                    </svg>
-                  )}
+                  <svg
+                    className={`shrink-0 transition-opacity ${hasSubfolders ? "opacity-60 group-hover/fi:opacity-100" : "opacity-0 group-hover/fi:opacity-100"}`}
+                    fill="none"
+                    width="7"
+                    height="13"
+                    viewBox="0 0 6.997 12.997"
+                  >
+                    <path d={dropdownSvgPaths.p3c2d8400} fill={hasSubfolders ? "#1e1e1e" : "#1463FF"} />
+                  </svg>
                 </div>
               );
             })
@@ -1404,25 +1535,46 @@ export default function MediaTransferInterface() {
     setBulkMovePos({ x: rect.left, y: rect.bottom + 8 });
   };
 
-  const handleBulkMove = (destination: number | null) => {
+  const handleBulkMove = (folderId: number | null, subFolderId?: number) => {
     const ids = Array.from(selectedAssets);
     if (isInsideSubFolder && activeSubFolder && activeFolder) {
       const assetsToMove = activeSubFolder.assets.filter((a) => ids.includes(a.id));
-      setFolders((prev) => prev.map((f) => {
-        if (f.id === activeFolderId) {
-          const updatedSubs = f.subfolders.map((s) =>
-            s.id === activeSubFolderId ? { ...s, assets: s.assets.filter((a) => !ids.includes(a.id)) } : s
-          );
-          if (destination !== null && destination === f.id) return { ...f, assets: [...f.assets, ...assetsToMove], subfolders: updatedSubs };
-          return { ...f, subfolders: updatedSubs };
-        }
-        if (destination !== null && f.id === destination) return { ...f, assets: [...f.assets, ...assetsToMove] };
-        return f;
-      }));
-      if (destination === null) setWorkspaceAssets((prev) => [...prev, ...assetsToMove]);
+      if (subFolderId !== undefined && folderId !== null) {
+        // Moving to a specific subfolder
+        setFolders((prev) => prev.map((f) => {
+          if (f.id === activeFolderId) {
+            const updatedSubs = f.subfolders.map((s) =>
+              s.id === activeSubFolderId ? { ...s, assets: s.assets.filter((a) => !ids.includes(a.id)) } : s
+            );
+            if (f.id === folderId) return { ...f, subfolders: updatedSubs.map((s) => s.id === subFolderId ? { ...s, assets: [...s.assets, ...assetsToMove] } : s) };
+            return { ...f, subfolders: updatedSubs };
+          }
+          if (f.id === folderId) return { ...f, subfolders: f.subfolders.map((s) => s.id === subFolderId ? { ...s, assets: [...s.assets, ...assetsToMove] } : s) };
+          return f;
+        }));
+      } else {
+        setFolders((prev) => prev.map((f) => {
+          if (f.id === activeFolderId) {
+            const updatedSubs = f.subfolders.map((s) =>
+              s.id === activeSubFolderId ? { ...s, assets: s.assets.filter((a) => !ids.includes(a.id)) } : s
+            );
+            if (folderId !== null && folderId === f.id) return { ...f, assets: [...f.assets, ...assetsToMove], subfolders: updatedSubs };
+            return { ...f, subfolders: updatedSubs };
+          }
+          if (folderId !== null && f.id === folderId) return { ...f, assets: [...f.assets, ...assetsToMove] };
+          return f;
+        }));
+        if (folderId === null) setWorkspaceAssets((prev) => [...prev, ...assetsToMove]);
+      }
     } else if (isInsideFolder && activeFolder) {
       const assetsToMove = activeFolder.assets.filter((a) => ids.includes(a.id));
-      if (destination === null) {
+      if (subFolderId !== undefined && folderId !== null) {
+        setFolders((prev) => prev.map((f) => {
+          if (f.id === activeFolderId) return { ...f, assets: f.assets.filter((a) => !ids.includes(a.id)) };
+          if (f.id === folderId) return { ...f, subfolders: f.subfolders.map((s) => s.id === subFolderId ? { ...s, assets: [...s.assets, ...assetsToMove] } : s) };
+          return f;
+        }));
+      } else if (folderId === null) {
         setFolders((prev) => prev.map((f) =>
           f.id === activeFolderId ? { ...f, assets: f.assets.filter((a) => !ids.includes(a.id)) } : f
         ));
@@ -1430,16 +1582,20 @@ export default function MediaTransferInterface() {
       } else {
         setFolders((prev) => prev.map((f) => {
           if (f.id === activeFolderId) return { ...f, assets: f.assets.filter((a) => !ids.includes(a.id)) };
-          if (f.id === destination) return { ...f, assets: [...f.assets, ...assetsToMove] };
+          if (f.id === folderId) return { ...f, assets: [...f.assets, ...assetsToMove] };
           return f;
         }));
       }
     } else {
       const assetsToMove = workspaceAssets.filter((a) => ids.includes(a.id));
       setWorkspaceAssets((prev) => prev.filter((a) => !ids.includes(a.id)));
-      if (destination !== null) {
+      if (subFolderId !== undefined && folderId !== null) {
         setFolders((prev) => prev.map((f) =>
-          f.id === destination ? { ...f, assets: [...f.assets, ...assetsToMove] } : f
+          f.id === folderId ? { ...f, subfolders: f.subfolders.map((s) => s.id === subFolderId ? { ...s, assets: [...s.assets, ...assetsToMove] } : s) } : f
+        ));
+      } else if (folderId !== null) {
+        setFolders((prev) => prev.map((f) =>
+          f.id === folderId ? { ...f, assets: [...f.assets, ...assetsToMove] } : f
         ));
       }
     }
@@ -1491,7 +1647,7 @@ export default function MediaTransferInterface() {
     setMoveDropdown({ assetId, x: rect.left - 240, y: rect.bottom + 10 });
   };
 
-  const handleMoveToFolder = (destination: number | null) => {
+  const handleMoveToFolder = (folderId: number | null, subFolderId?: number) => {
     if (!moveDropdown) return;
     const assetId = moveDropdown.assetId;
     let asset: CardData | undefined;
@@ -1499,23 +1655,45 @@ export default function MediaTransferInterface() {
     if (isInsideSubFolder && activeSubFolder && activeFolder) {
       asset = activeSubFolder.assets.find((a) => a.id === assetId);
       if (!asset) { setMoveDropdown(null); return; }
-      setFolders((prev) => prev.map((f) => {
-        if (f.id === activeFolderId) {
-          const updatedSubs = f.subfolders.map((s) =>
-            s.id === activeSubFolderId ? { ...s, assets: s.assets.filter((a) => a.id !== assetId) } : s
-          );
-          if (destination === f.id) return { ...f, assets: [...f.assets, asset!], subfolders: updatedSubs };
-          return { ...f, subfolders: updatedSubs };
-        }
-        if (destination !== null && f.id === destination) return { ...f, assets: [...f.assets, asset!] };
-        return f;
-      }));
-      if (destination === null) setWorkspaceAssets((prev) => [...prev, asset!]);
+      if (subFolderId !== undefined && folderId !== null) {
+        // Moving to a specific subfolder
+        setFolders((prev) => prev.map((f) => {
+          if (f.id === activeFolderId) {
+            const updatedSubs = f.subfolders.map((s) =>
+              s.id === activeSubFolderId ? { ...s, assets: s.assets.filter((a) => a.id !== assetId) } : s
+            );
+            if (f.id === folderId) return { ...f, subfolders: updatedSubs.map((s) => s.id === subFolderId ? { ...s, assets: [...s.assets, asset!] } : s) };
+            return { ...f, subfolders: updatedSubs };
+          }
+          if (f.id === folderId) return { ...f, subfolders: f.subfolders.map((s) => s.id === subFolderId ? { ...s, assets: [...s.assets, asset!] } : s) };
+          return f;
+        }));
+      } else {
+        setFolders((prev) => prev.map((f) => {
+          if (f.id === activeFolderId) {
+            const updatedSubs = f.subfolders.map((s) =>
+              s.id === activeSubFolderId ? { ...s, assets: s.assets.filter((a) => a.id !== assetId) } : s
+            );
+            if (folderId === f.id) return { ...f, assets: [...f.assets, asset!], subfolders: updatedSubs };
+            return { ...f, subfolders: updatedSubs };
+          }
+          if (folderId !== null && f.id === folderId) return { ...f, assets: [...f.assets, asset!] };
+          return f;
+        }));
+        if (folderId === null) setWorkspaceAssets((prev) => [...prev, asset!]);
+      }
     } else if (isInsideFolder && activeFolder) {
       // Source: current folder
       asset = activeFolder.assets.find((a) => a.id === assetId);
       if (!asset) { setMoveDropdown(null); return; }
-      if (destination === null) {
+      if (subFolderId !== undefined && folderId !== null) {
+        // Moving to a specific subfolder
+        setFolders((prev) => prev.map((f) => {
+          if (f.id === activeFolderId) return { ...f, assets: f.assets.filter((a) => a.id !== assetId) };
+          if (f.id === folderId) return { ...f, subfolders: f.subfolders.map((s) => s.id === subFolderId ? { ...s, assets: [...s.assets, asset!] } : s) };
+          return f;
+        }));
+      } else if (folderId === null) {
         setFolders((prev) => prev.map((f) =>
           f.id === activeFolderId ? { ...f, assets: f.assets.filter((a) => a.id !== assetId) } : f
         ));
@@ -1523,7 +1701,7 @@ export default function MediaTransferInterface() {
       } else {
         setFolders((prev) => prev.map((f) => {
           if (f.id === activeFolderId) return { ...f, assets: f.assets.filter((a) => a.id !== assetId) };
-          if (f.id === destination) return { ...f, assets: [...f.assets, asset!] };
+          if (f.id === folderId) return { ...f, assets: [...f.assets, asset!] };
           return f;
         }));
       }
@@ -1532,9 +1710,13 @@ export default function MediaTransferInterface() {
       asset = workspaceAssets.find((a) => a.id === assetId);
       if (!asset) { setMoveDropdown(null); return; }
       setWorkspaceAssets((prev) => prev.filter((a) => a.id !== assetId));
-      if (destination !== null) {
+      if (subFolderId !== undefined && folderId !== null) {
         setFolders((prev) => prev.map((f) =>
-          f.id === destination ? { ...f, assets: [...f.assets, asset!] } : f
+          f.id === folderId ? { ...f, subfolders: f.subfolders.map((s) => s.id === subFolderId ? { ...s, assets: [...s.assets, asset!] } : s) } : f
+        ));
+      } else if (folderId !== null) {
+        setFolders((prev) => prev.map((f) =>
+          f.id === folderId ? { ...f, assets: [...f.assets, asset!] } : f
         ));
       }
     }
@@ -1708,6 +1890,7 @@ export default function MediaTransferInterface() {
         <AddToFolderDropdown
           folders={folders}
           currentFolderId={activeFolderId}
+          currentSubFolderId={activeSubFolderId}
           position={bulkMovePos}
           onSelect={handleBulkMove}
           onCreateFolder={handleBulkCreateFolder}
@@ -1719,6 +1902,7 @@ export default function MediaTransferInterface() {
         <AddToFolderDropdown
           folders={folders}
           currentFolderId={activeFolderId}
+          currentSubFolderId={activeSubFolderId}
           position={{ x: moveDropdown.x, y: moveDropdown.y }}
           onSelect={handleMoveToFolder}
           onCreateFolder={handleCreateFolderFromMove}
