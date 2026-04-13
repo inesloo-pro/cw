@@ -1856,7 +1856,7 @@ export default function MediaTransferInterface() {
   const handleSelectAll = () => setSelectedAssets(new Set(currentAssets.map((a) => a.id)));
 
   return (
-    <div className="bg-[#f8f8f8] flex flex-col items-start relative h-screen overflow-y-auto w-full">
+    <div className="bg-[#f8f8f8] flex flex-col items-start relative min-h-screen w-full">
       <Navigation />
 
       <div className="flex-1 min-h-px min-w-px relative w-full">
