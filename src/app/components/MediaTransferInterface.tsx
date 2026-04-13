@@ -236,12 +236,15 @@ function AddToFolderDropdown({ folders, currentFolderId, currentSubFolderId, pos
 
   // ── SUBFOLDER VIEW ──────────────────────────────────────────────────────────
   if (view === "folder" && drillFolder) {
+    // Search filters both the folder itself and its subfolders
+    const folderMatchesSearch = drillFolder.name.toLowerCase().includes(search.toLowerCase());
     const filteredSubs = drillFolder.subfolders.filter((s) =>
       s.name.toLowerCase().includes(search.toLowerCase())
     );
+    const isFolderCurrentRoot = drillFolder.id === currentFolderId && !currentSubFolderId;
     return (
       <div ref={ref} className={containerClass} style={containerStyle}>
-        {/* Header: back arrow + folder name bold + close */}
+        {/* Header: back arrow + "Move to" medium + close */}
         <div className="flex items-center px-[12px] py-[4px] h-[48px] shrink-0 gap-[8px]">
           <button
             onClick={() => { setView("root"); setDrillFolder(null); setSearch(""); }}
@@ -251,7 +254,7 @@ function AddToFolderDropdown({ folders, currentFolderId, currentSubFolderId, pos
               <path d={dropdownSvgPaths.p3c2d8400} fill="#1E1E1E" />
             </svg>
           </button>
-          <span className="font-['Satoshi-Bold',sans-serif] text-[#1e1e1e] text-[16px] flex-1 truncate">{drillFolder.name}</span>
+          <span className="font-['Satoshi-Medium',sans-serif] text-[#1e1e1e] text-[16px] flex-1">Move to</span>
           <button
             onClick={onClose}
             className="flex items-center justify-center size-[20px] rounded-[3px] hover:bg-[#f5f5f5] transition-colors shrink-0"
@@ -283,16 +286,33 @@ function AddToFolderDropdown({ folders, currentFolderId, currentSubFolderId, pos
         {/* Divider */}
         <div className="h-px bg-[#e4e4e4] shrink-0" />
 
-        {/* Subfolder list */}
+        {/* List: folder itself first, then subfolders */}
         <div className="flex gap-[4px] p-[4px] max-h-[220px] overflow-hidden">
           <div className="flex flex-col gap-[0px] flex-1 overflow-y-auto">
-            {filteredSubs.length === 0 && search !== "" ? (
+            {/* The folder itself */}
+            {(folderMatchesSearch || search === "") && (
+              isFolderCurrentRoot ? (
+                <div className="flex items-center justify-between pl-[4px] pr-[12px] h-[48px] rounded-[2px] cursor-default">
+                  <span className="font-['Satoshi-Regular',sans-serif] text-[#949494] text-[16px] truncate">{drillFolder.name}</span>
+                  <span className="font-['Satoshi-Medium',sans-serif] text-[#c0c0c0] text-[11px] shrink-0 ml-[6px]">current</span>
+                </div>
+              ) : (
+                <div
+                  onClick={() => onSelect(drillFolder.id)}
+                  className="flex items-center justify-between pl-[4px] pr-[12px] h-[48px] rounded-[2px] cursor-pointer hover:bg-[#f5f5f5] transition-colors group/fi"
+                >
+                  <span className="font-['Satoshi-Regular',sans-serif] text-[#1e1e1e] text-[16px] group-hover/fi:text-[#1463FF] transition-colors">{drillFolder.name}</span>
+                  <svg className="shrink-0 opacity-0 group-hover/fi:opacity-100 transition-opacity" fill="none" width="7" height="13" viewBox="0 0 6.997 12.997">
+                    <path d={dropdownSvgPaths.p3c2d8400} fill="#1463FF" />
+                  </svg>
+                </div>
+              )
+            )}
+
+            {/* Subfolders */}
+            {filteredSubs.length === 0 && search !== "" && !folderMatchesSearch ? (
               <div className="flex items-center px-[4px] py-[12px]">
-                <span className="font-['Satoshi-Medium',sans-serif] text-[#949494] text-[14px]">No subfolders match</span>
-              </div>
-            ) : filteredSubs.length === 0 ? (
-              <div className="flex items-center px-[4px] py-[4px]">
-                <span className="font-['Satoshi-Medium',sans-serif] text-[#949494] text-[14px]">No subfolders</span>
+                <span className="font-['Satoshi-Medium',sans-serif] text-[#949494] text-[14px]">No results match</span>
               </div>
             ) : (
               filteredSubs.map((sub) => {
@@ -302,21 +322,28 @@ function AddToFolderDropdown({ folders, currentFolderId, currentSubFolderId, pos
                     key={sub.id}
                     onClick={isCurrent ? undefined : () => onSelect(drillFolder.id, sub.id)}
                     className={`flex items-center justify-between pl-[4px] pr-[12px] h-[48px] rounded-[2px] transition-colors group/fi ${
-                      isCurrent ? "cursor-default opacity-40" : "cursor-pointer hover:bg-[#f5f5f5]"
+                      isCurrent ? "cursor-default" : "cursor-pointer hover:bg-[#f5f5f5]"
                     }`}
                   >
-                    <span className={`font-['Satoshi-Regular',sans-serif] text-[#1e1e1e] text-[16px] transition-colors ${!isCurrent ? "group-hover/fi:text-[#1463FF]" : ""}`}>{sub.name}</span>
-                    {!isCurrent && (
-                      <svg className="shrink-0 opacity-0 group-hover/fi:opacity-100 transition-opacity" fill="none" width="7" height="13" viewBox="0 0 6.997 12.997">
-                        <path d={dropdownSvgPaths.p3c2d8400} fill="#1463FF" />
-                      </svg>
+                    {isCurrent ? (
+                      <>
+                        <span className="font-['Satoshi-Regular',sans-serif] text-[#949494] text-[16px] truncate">{sub.name}</span>
+                        <span className="font-['Satoshi-Medium',sans-serif] text-[#c0c0c0] text-[11px] shrink-0 ml-[6px]">current</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-['Satoshi-Regular',sans-serif] text-[#1e1e1e] text-[16px] group-hover/fi:text-[#1463FF] transition-colors">{sub.name}</span>
+                        <svg className="shrink-0 opacity-0 group-hover/fi:opacity-100 transition-opacity" fill="none" width="7" height="13" viewBox="0 0 6.997 12.997">
+                          <path d={dropdownSvgPaths.p3c2d8400} fill="#1463FF" />
+                        </svg>
+                      </>
                     )}
                   </div>
                 );
               })
             )}
           </div>
-          {filteredSubs.length > 4 && (
+          {(filteredSubs.length + (folderMatchesSearch || search === "" ? 1 : 0)) > 4 && (
             <div className="bg-[#e4e4e4] flex flex-col items-center rounded-[2px] self-stretch shrink-0 w-[3px]">
               <div className="bg-[#949494] h-[40px] rounded-[100px] w-full" />
             </div>
