@@ -1598,7 +1598,14 @@ export default function MediaTransferInterface() {
       const assetsToMove = activeFolder.assets.filter((a) => ids.includes(a.id));
       if (subFolderId !== undefined && folderId !== null) {
         setFolders((prev) => prev.map((f) => {
-          if (f.id === activeFolderId) return { ...f, assets: f.assets.filter((a) => !ids.includes(a.id)) };
+          if (f.id === activeFolderId) {
+            const withAssetsRemoved = f.assets.filter((a) => !ids.includes(a.id));
+            if (f.id === folderId) {
+              // Same folder: remove from root AND add to subfolder in one pass
+              return { ...f, assets: withAssetsRemoved, subfolders: f.subfolders.map((s) => s.id === subFolderId ? { ...s, assets: [...s.assets, ...assetsToMove] } : s) };
+            }
+            return { ...f, assets: withAssetsRemoved };
+          }
           if (f.id === folderId) return { ...f, subfolders: f.subfolders.map((s) => s.id === subFolderId ? { ...s, assets: [...s.assets, ...assetsToMove] } : s) };
           return f;
         }));
@@ -1717,7 +1724,14 @@ export default function MediaTransferInterface() {
       if (subFolderId !== undefined && folderId !== null) {
         // Moving to a specific subfolder
         setFolders((prev) => prev.map((f) => {
-          if (f.id === activeFolderId) return { ...f, assets: f.assets.filter((a) => a.id !== assetId) };
+          if (f.id === activeFolderId) {
+            const withAssetRemoved = f.assets.filter((a) => a.id !== assetId);
+            if (f.id === folderId) {
+              // Same folder: remove from root AND add to subfolder in one pass
+              return { ...f, assets: withAssetRemoved, subfolders: f.subfolders.map((s) => s.id === subFolderId ? { ...s, assets: [...s.assets, asset!] } : s) };
+            }
+            return { ...f, assets: withAssetRemoved };
+          }
           if (f.id === folderId) return { ...f, subfolders: f.subfolders.map((s) => s.id === subFolderId ? { ...s, assets: [...s.assets, asset!] } : s) };
           return f;
         }));
