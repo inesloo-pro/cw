@@ -441,10 +441,11 @@ function AddToFolderDropdown({ folders, currentFolderId, currentSubFolderId, pos
             </div>
           ) : (
             filtered.map((folder) => {
-              // Skip the current root folder (already shown at top as "current") when not in a subfolder
               const isCurrent = folder.id === currentFolderId && !currentSubFolderId;
-              if (isCurrent) return null;
               const hasSubfolders = folder.subfolders.length > 0;
+              // Skip the current root folder only when it has no subfolders —
+              // if it has subfolders the user needs to drill in to reach them
+              if (isCurrent && !hasSubfolders) return null;
               return (
                 <div
                   key={folder.id}
