@@ -1859,8 +1859,8 @@ export default function MediaTransferInterface() {
     <div className="bg-[#f8f8f8] flex flex-col items-start relative min-h-screen w-full">
       <Navigation />
 
-      <div className="flex-1 min-h-px min-w-px relative w-full">
-        <div className="flex flex-col gap-[40px] items-start px-[80px] pt-[40px] pb-[80px] size-full">
+      <div className="w-full relative">
+        <div className="flex flex-col gap-[40px] items-start px-[80px] pt-[40px] pb-[80px] w-full">
           <ActionBar
             title={currentTitle}
             titleFolders={titleFolders}
@@ -1870,7 +1870,7 @@ export default function MediaTransferInterface() {
             buttonRef={buttonRef}
           />
 
-          <div className="flex flex-[1_0_0] flex-col gap-[32px] items-start min-h-px min-w-px w-full">
+          <div className="flex flex-col gap-[32px] items-start w-full">
             {hasSelection ? (
               <BulkActionBar
                 count={selectedAssets.size}
