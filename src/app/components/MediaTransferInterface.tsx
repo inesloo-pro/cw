@@ -755,7 +755,7 @@ function FilterBar({ assetCount }: { assetCount: number }) {
         </div>
         <div className="flex gap-[8px] items-center shrink-0">
           {["Status", "Assets type", "Indexing status", "Duplicates"].map((label) => (
-            <div key={label} className="flex gap-[8px] items-center justify-center px-[8px] h-[30px] relative rounded-[4px] shrink-0 cursor-pointer hover:bg-[#f0f0f0] transition-colors">
+            <div key={label} className="flex gap-[8px] items-center justify-center px-[8px] h-[37px] relative rounded-[4px] shrink-0 cursor-pointer hover:bg-[#f0f0f0] transition-colors">
               <div aria-hidden="true" className="absolute border border-[#e4e4e4] border-solid inset-0 pointer-events-none rounded-[4px]" />
               <span className="font-['Satoshi-Regular',sans-serif] not-italic text-[#646464] text-[14px] whitespace-nowrap">{label}</span>
               <FilterChevron />
@@ -764,7 +764,7 @@ function FilterBar({ assetCount }: { assetCount: number }) {
         </div>
       </div>
       <div className="flex gap-[8px] items-center shrink-0">
-        <div className="flex gap-[8px] items-center p-[8px] relative rounded-[4px] shrink-0 w-[200px]">
+        <div className="flex gap-[8px] items-center px-[8px] h-[37px] relative rounded-[4px] shrink-0 w-[200px]">
           <div aria-hidden="true" className="absolute border border-[#e4e4e4] border-solid inset-0 pointer-events-none rounded-[4px]" />
           <div className="overflow-clip relative shrink-0 size-[16px]">
             <div className="absolute inset-[10%_8.36%_8.45%_10.08%]">
@@ -775,7 +775,7 @@ function FilterBar({ assetCount }: { assetCount: number }) {
           </div>
           <span className="font-['Satoshi-Regular',sans-serif] not-italic text-[#646464] text-[14px]">Search...</span>
         </div>
-        <div className="flex gap-[8px] items-center justify-center p-[8px] relative rounded-[4px] shrink-0 cursor-pointer hover:bg-[#f0f0f0] transition-colors">
+        <div className="flex gap-[8px] items-center justify-center px-[8px] h-[37px] relative rounded-[4px] shrink-0 cursor-pointer hover:bg-[#f0f0f0] transition-colors">
           <div aria-hidden="true" className="absolute border border-[#e4e4e4] border-solid inset-0 pointer-events-none rounded-[4px]" />
           <div className="flex font-['Satoshi-Regular',sans-serif] gap-[4px] items-center not-italic shrink-0 text-[14px] whitespace-nowrap">
             <span className="text-[#646464]">Sort by:</span>
