@@ -1419,7 +1419,7 @@ function FoldersSection({
 }) {
   return (
     <div className="flex flex-col gap-[12px] items-start shrink-0 w-full">
-      <p className="font-['Satoshi-Medium',sans-serif] leading-[normal] text-[#646464] text-[12px] uppercase tracking-[0.5px]">Folders</p>
+      <p className="font-['Satoshi-Bold',sans-serif] leading-[normal] text-[#646464] text-[12px] uppercase tracking-[0.5px]">Folders</p>
       <div className="content-start grid grid-cols-4 gap-x-[24px] gap-y-[16px] items-start w-full">
         {folders.map((folder) => (
           <div key={folder.id} className="min-w-0">
