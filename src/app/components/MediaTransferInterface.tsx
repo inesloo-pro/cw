@@ -521,6 +521,15 @@ function PublishModal({ groups, onPublish, onClose }: {
 }) {
   const allAssetIds = groups.flatMap((g) => g.assets.map((a) => a.id));
   const [selected, setSelected] = useState<Set<string>>(new Set(allAssetIds));
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  const toggleCollapsed = (label: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label); else next.add(label);
+      return next;
+    });
+  };
 
   const toggleAsset = (id: string) => {
     setSelected((prev) => {
@@ -589,26 +598,36 @@ function PublishModal({ groups, onPublish, onClose }: {
             <p className="font-['Satoshi-Regular',sans-serif] text-[#949494] text-[14px] text-center py-[24px]">No assets to publish.</p>
           ) : groups.map((group) => {
             const groupAllSel = group.assets.every((a) => selected.has(a.id));
+            const isCollapsed = collapsed.has(group.label);
             return (
               <div key={group.label} className="flex flex-col gap-[8px]">
                 {/* Group header */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-[6px]">
-                    <span className="font-['Satoshi-Bold',sans-serif] text-[#646464] text-[11px] uppercase tracking-[0.5px]">{group.label}</span>
-                    <svg fill="none" width="8" height="5" viewBox="0 0 8 5">
+                  <button
+                    onClick={() => toggleCollapsed(group.label)}
+                    className="flex items-center gap-[6px] group/hdr"
+                  >
+                    <span className="font-['Satoshi-Bold',sans-serif] text-[#646464] text-[11px] uppercase tracking-[0.5px] group-hover/hdr:text-[#1e1e1e] transition-colors">{group.label}</span>
+                    <svg
+                      fill="none" width="8" height="5" viewBox="0 0 8 5"
+                      className="transition-transform duration-200 shrink-0"
+                      style={{ transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)" }}
+                    >
                       <path d="M1 1L4 4L7 1" stroke="#646464" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                  </div>
-                  <button
-                    onClick={() => toggleGroup(group)}
-                    className="font-['Satoshi-Medium',sans-serif] text-[#1463FF] text-[13px] hover:underline"
-                  >
-                    {groupAllSel ? "Unselect all" : "Select all"}
                   </button>
+                  {!isCollapsed && (
+                    <button
+                      onClick={() => toggleGroup(group)}
+                      className="font-['Satoshi-Medium',sans-serif] text-[#1463FF] text-[13px] hover:underline"
+                    >
+                      {groupAllSel ? "Unselect all" : "Select all"}
+                    </button>
+                  )}
                 </div>
 
                 {/* Asset rows */}
-                {group.assets.map((asset) => {
+                {!isCollapsed && group.assets.map((asset) => {
                   const isSel = selected.has(asset.id);
                   return (
                     <div
