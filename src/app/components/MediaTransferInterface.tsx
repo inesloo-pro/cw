@@ -697,36 +697,36 @@ function PublishToast({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed bottom-[24px] right-[24px] z-[300] bg-white rounded-[12px] w-[340px] p-[16px] flex items-start gap-[12px]"
-      style={{ boxShadow: "0px 8px 30px rgba(0,0,0,0.12), 0px 0px 0px 1px rgba(0,0,0,0.06)" }}
+      className="fixed bottom-[24px] right-[24px] z-[300] bg-white rounded-[8px] flex items-start gap-[16px] p-[8px]"
+      style={{ boxShadow: "0px 5px 15px rgba(30, 30, 30, 0.05)" }}
     >
-      {/* Icon */}
-      <div className="shrink-0 size-[40px] rounded-[10px] bg-[#EEF4FF] flex items-center justify-center">
-        <svg fill="none" width="20" height="20" viewBox="0 0 24 24">
+      {/* Icon block — 88×88 */}
+      <div className="shrink-0 w-[88px] h-[88px] rounded-[4px] bg-[#F1F6FF] flex items-center justify-center">
+        <svg fill="none" width="32" height="32" viewBox="0 0 24 24">
           <path d="M22 2L11 13" stroke="#1463FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="#1463FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
       {/* Content */}
-      <div className="flex flex-col gap-[4px] flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-[8px]">
-          <span className="font-['Satoshi-Regular',sans-serif] text-[#949494] text-[12px]">Now</span>
-          <button
-            onClick={onClose}
-            className="flex items-center justify-center size-[16px] hover:bg-[#f5f5f5] rounded-[2px] transition-colors shrink-0"
-          >
-            <svg fill="none" width="9" height="9" viewBox="0 0 9.984 9.984">
-              <path d={dropdownSvgPaths.p5391080} fill="#949494" />
-            </svg>
-          </button>
+      <div className="flex flex-col justify-center gap-[8px] flex-1 self-stretch min-w-0">
+        <span className="font-['Montserrat:Medium',sans-serif] text-[#949494] text-[12px]">Now</span>
+        <div className="flex flex-col gap-[4px]">
+          <span className="font-['Montserrat:Bold',sans-serif] text-[rgba(0,0,0,0.20)] text-[14px] leading-snug">
+            The publication has been considered!
+          </span>
+          <span className="font-['Montserrat:Medium',sans-serif] text-[rgba(0,0,0,0.20)] text-[14px] leading-snug">
+            You will receive a notification when it is finished!
+          </span>
         </div>
-        <span className="font-['Satoshi-Bold',sans-serif] text-[#1e1e1e] text-[14px] leading-snug">
-          The publication has been considered!
-        </span>
-        <span className="font-['Satoshi-Regular',sans-serif] text-[#646464] text-[13px] leading-snug">
-          You will receive a notification when it is finished!
-        </span>
-      </div>
+      {/* Close button — sibling of icon + content, top-aligned */}
+      <button
+        onClick={onClose}
+        className="shrink-0 flex items-center justify-center size-[16px] self-start hover:opacity-70 transition-opacity"
+      >
+        <svg fill="none" width="10" height="10" viewBox="0 0 9.984 9.984">
+          <path d={dropdownSvgPaths.p5391080} fill="#1463FF" />
+        </svg>
+      </button>
     </div>
   );
 }
