@@ -40,6 +40,11 @@ interface MoveDropdownState {
   y: number;
 }
 
+interface PublishGroup {
+  label: string;
+  assets: CardData[];
+}
+
 // ─── Navigation ──────────────────────────────────────────────────────────────
 
 function Logo() {
@@ -131,9 +136,11 @@ interface DropdownMenuProps {
   dropdownRef: React.RefObject<HTMLDivElement>;
   buttonRef: React.RefObject<HTMLDivElement>;
   onAddFolder?: () => void;
+  publishLabel: string;
+  onPublish: () => void;
 }
 
-function DropdownMenu({ dropdownRef, buttonRef, onAddFolder }: DropdownMenuProps) {
+function DropdownMenu({ dropdownRef, buttonRef, onAddFolder, publishLabel, onPublish }: DropdownMenuProps) {
   const [position, setPosition] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
@@ -144,7 +151,7 @@ function DropdownMenu({ dropdownRef, buttonRef, onAddFolder }: DropdownMenuProps
   }, [buttonRef]);
 
   const staticItems = [
-    { label: "Publish assets", disabled: false, onClick: undefined as (() => void) | undefined },
+    { label: publishLabel, disabled: false, onClick: onPublish },
     { label: "Add new folder", disabled: !onAddFolder, onClick: onAddFolder },
     { label: "Ask for approval", disabled: true, onClick: undefined as (() => void) | undefined },
   ];
@@ -500,6 +507,206 @@ function AddToFolderDropdown({ folders, currentFolderId, currentSubFolderId, pos
           </svg>
           <span className="font-['Satoshi-Regular',sans-serif] text-[#1e1e1e] text-[16px] group-hover:text-[#1463FF] transition-colors">Create new folder</span>
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Publish Modal ────────────────────────────────────────────────────────────
+
+function PublishModal({ groups, onPublish, onClose }: {
+  groups: PublishGroup[];
+  onPublish: (selectedIds: Set<string>) => void;
+  onClose: () => void;
+}) {
+  const allAssetIds = groups.flatMap((g) => g.assets.map((a) => a.id));
+  const [selected, setSelected] = useState<Set<string>>(new Set(allAssetIds));
+
+  const toggleAsset = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleGroup = (group: PublishGroup) => {
+    const ids = group.assets.map((a) => a.id);
+    const allSel = ids.every((id) => selected.has(id));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allSel) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
+  const selectedCount = selected.size;
+  const totalCount = allAssetIds.length;
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[200]">
+      <div
+        className="bg-white rounded-[8px] w-[520px] flex flex-col overflow-hidden"
+        style={{ boxShadow: "0px 20px 60px rgba(0,0,0,0.18)" }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-[24px] pt-[24px] pb-[16px] shrink-0">
+          <span className="font-['Satoshi-Bold',sans-serif] text-[#1e1e1e] text-[20px]">Publish assets</span>
+          <button
+            onClick={onClose}
+            className="flex items-center justify-center size-[24px] hover:bg-[#f5f5f5] rounded-[4px] transition-colors"
+          >
+            <svg fill="none" width="11" height="11" viewBox="0 0 9.984 9.984">
+              <path d={dropdownSvgPaths.p5391080} fill="#1E1E1E" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Summary */}
+        <div className="flex items-center justify-between px-[24px] pb-[16px] shrink-0">
+          <div className="flex items-center gap-[8px]">
+            <span className="font-['Satoshi-Medium',sans-serif] text-[#1e1e1e] text-[14px]">
+              {selectedCount} Media{selectedCount !== 1 ? "s" : ""} selected
+            </span>
+            <button
+              onClick={() => setSelected(selectedCount === totalCount ? new Set() : new Set(allAssetIds))}
+              className="font-['Satoshi-Medium',sans-serif] text-[#1463FF] text-[14px] hover:underline"
+            >
+              {selectedCount === totalCount ? "Unselect" : "Select all"}
+            </button>
+          </div>
+          <span className="font-['Satoshi-Medium',sans-serif] text-[#949494] text-[14px]">
+            {totalCount} Media{totalCount !== 1 ? "s" : ""} ready-to-published
+          </span>
+        </div>
+
+        <div className="h-px bg-[#e4e4e4] shrink-0" />
+
+        {/* Asset list */}
+        <div className="flex flex-col overflow-y-auto max-h-[400px] px-[24px] py-[16px] gap-[20px]">
+          {groups.length === 0 ? (
+            <p className="font-['Satoshi-Regular',sans-serif] text-[#949494] text-[14px] text-center py-[24px]">No assets to publish.</p>
+          ) : groups.map((group) => {
+            const groupAllSel = group.assets.every((a) => selected.has(a.id));
+            return (
+              <div key={group.label} className="flex flex-col gap-[8px]">
+                {/* Group header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-[6px]">
+                    <span className="font-['Satoshi-Bold',sans-serif] text-[#646464] text-[11px] uppercase tracking-[0.5px]">{group.label}</span>
+                    <svg fill="none" width="8" height="5" viewBox="0 0 8 5">
+                      <path d="M1 1L4 4L7 1" stroke="#646464" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <button
+                    onClick={() => toggleGroup(group)}
+                    className="font-['Satoshi-Medium',sans-serif] text-[#1463FF] text-[13px] hover:underline"
+                  >
+                    {groupAllSel ? "Unselect all" : "Select all"}
+                  </button>
+                </div>
+
+                {/* Asset rows */}
+                {group.assets.map((asset) => {
+                  const isSel = selected.has(asset.id);
+                  return (
+                    <div
+                      key={asset.id}
+                      onClick={() => toggleAsset(asset.id)}
+                      className={`flex items-center gap-[12px] px-[12px] py-[10px] rounded-[6px] cursor-pointer border transition-colors ${
+                        isSel ? "border-[#1463FF]" : "border-[#e4e4e4] hover:border-[#c0c0c0]"
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <div className={`shrink-0 size-[20px] rounded-[4px] border-2 flex items-center justify-center transition-colors ${
+                        isSel ? "bg-[#1463FF] border-[#1463FF]" : "bg-white border-[#d0d0d0]"
+                      }`}>
+                        {isSel && (
+                          <svg fill="none" width="11" height="8" viewBox="0 0 11 8">
+                            <path d="M1 4L4 7L10 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
+                      {/* Thumbnail */}
+                      <div className="shrink-0 size-[40px] rounded-[4px] overflow-hidden bg-[#e4e4e4]">
+                        <img src={asset.image} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      {/* Info */}
+                      <div className="flex flex-col gap-[2px] flex-1 min-w-0">
+                        <span className="font-['Satoshi-Medium',sans-serif] text-[#1e1e1e] text-[14px] truncate">Denali.jpg</span>
+                        <span className="font-['Satoshi-Regular',sans-serif] text-[#949494] text-[12px]">Version 1</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="h-px bg-[#e4e4e4] shrink-0" />
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-[24px] py-[16px] shrink-0">
+          <button
+            onClick={onClose}
+            className="font-['Satoshi-Medium',sans-serif] text-[#1463FF] text-[14px] hover:underline"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onPublish(selected)}
+            disabled={selectedCount === 0}
+            className="font-['Satoshi-Medium',sans-serif] text-white text-[14px] bg-[#1463FF] hover:bg-[#0f4fcf] disabled:opacity-40 disabled:cursor-not-allowed px-[24px] py-[10px] rounded-[6px] transition-colors"
+          >
+            Publish
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Publish Toast ─────────────────────────────────────────────────────────────
+
+function PublishToast({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 6000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed bottom-[24px] right-[24px] z-[300] bg-white rounded-[12px] w-[340px] p-[16px] flex items-start gap-[12px]"
+      style={{ boxShadow: "0px 8px 30px rgba(0,0,0,0.12), 0px 0px 0px 1px rgba(0,0,0,0.06)" }}
+    >
+      {/* Icon */}
+      <div className="shrink-0 size-[40px] rounded-[10px] bg-[#EEF4FF] flex items-center justify-center">
+        <svg fill="none" width="20" height="20" viewBox="0 0 24 24">
+          <path d="M22 2L11 13" stroke="#1463FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="#1463FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      {/* Content */}
+      <div className="flex flex-col gap-[4px] flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-[8px]">
+          <span className="font-['Satoshi-Regular',sans-serif] text-[#949494] text-[12px]">Now</span>
+          <button
+            onClick={onClose}
+            className="flex items-center justify-center size-[16px] hover:bg-[#f5f5f5] rounded-[2px] transition-colors shrink-0"
+          >
+            <svg fill="none" width="9" height="9" viewBox="0 0 9.984 9.984">
+              <path d={dropdownSvgPaths.p5391080} fill="#949494" />
+            </svg>
+          </button>
+        </div>
+        <span className="font-['Satoshi-Bold',sans-serif] text-[#1e1e1e] text-[14px] leading-snug">
+          The publication has been considered!
+        </span>
+        <span className="font-['Satoshi-Regular',sans-serif] text-[#646464] text-[13px] leading-snug">
+          You will receive a notification when it is finished!
+        </span>
       </div>
     </div>
   );
@@ -1450,6 +1657,8 @@ export default function MediaTransferInterface() {
   const [moveDropdown, setMoveDropdown] = useState<MoveDropdownState | null>(null);
   const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set());
   const [bulkMovePos, setBulkMovePos] = useState<{ x: number; y: number } | null>(null);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showPublishToast, setShowPublishToast] = useState(false);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -1823,6 +2032,36 @@ export default function MediaTransferInterface() {
 
   const isInsideFolder = activeFolderId !== null && activeFolder !== null;
   const isInsideSubFolder = isInsideFolder && activeSubFolderId !== null && activeSubFolder !== null;
+
+  const getPublishGroups = (): PublishGroup[] => {
+    if (isInsideSubFolder && activeSubFolder) {
+      return activeSubFolder.assets.length > 0 ? [{ label: activeSubFolder.name, assets: activeSubFolder.assets }] : [];
+    }
+    if (isInsideFolder && activeFolder) {
+      const groups: PublishGroup[] = [];
+      if (activeFolder.assets.length > 0) groups.push({ label: activeFolder.name, assets: activeFolder.assets });
+      activeFolder.subfolders.forEach((sub) => {
+        if (sub.assets.length > 0) groups.push({ label: `${activeFolder.name} / ${sub.name}`, assets: sub.assets });
+      });
+      return groups;
+    }
+    // Workspace view: all assets everywhere
+    const groups: PublishGroup[] = [];
+    if (workspaceAssets.length > 0) groups.push({ label: "Workspace", assets: workspaceAssets });
+    folders.forEach((folder) => {
+      if (folder.assets.length > 0) groups.push({ label: folder.name, assets: folder.assets });
+      folder.subfolders.forEach((sub) => {
+        if (sub.assets.length > 0) groups.push({ label: `${folder.name} / ${sub.name}`, assets: sub.assets });
+      });
+    });
+    return groups;
+  };
+
+  const handlePublish = (_selectedIds: Set<string>) => {
+    setShowPublishModal(false);
+    setIsDropdownOpen(false);
+    setShowPublishToast(true);
+  };
   const currentAssets = isInsideSubFolder ? activeSubFolder!.assets : isInsideFolder ? activeFolder!.assets : workspaceAssets;
   const currentTitle = isInsideSubFolder ? activeSubFolder!.name : isInsideFolder ? activeFolder!.name : "Workspace title";
   const hasSelection = selectedAssets.size > 0;
@@ -1927,7 +2166,21 @@ export default function MediaTransferInterface() {
           dropdownRef={dropdownRef}
           buttonRef={buttonRef}
           onAddFolder={isInsideSubFolder ? undefined : isInsideFolder ? handleAddSubFolder : handleAddFolder}
+          publishLabel={isInsideFolder ? "Publish folder's assets" : "Publish all assets"}
+          onPublish={() => { setShowPublishModal(true); setIsDropdownOpen(false); }}
         />
+      )}
+
+      {showPublishModal && (
+        <PublishModal
+          groups={getPublishGroups()}
+          onPublish={handlePublish}
+          onClose={() => setShowPublishModal(false)}
+        />
+      )}
+
+      {showPublishToast && (
+        <PublishToast onClose={() => setShowPublishToast(false)} />
       )}
 
       {bulkMovePos && (
