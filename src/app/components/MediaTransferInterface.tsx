@@ -718,6 +718,7 @@ function PublishToast({ onClose }: { onClose: () => void }) {
             You will receive a notification when it is finished!
           </span>
         </div>
+      </div>
       {/* Close button — sibling of icon + content, top-aligned */}
       <button
         onClick={onClose}
