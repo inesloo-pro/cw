@@ -625,8 +625,9 @@ function PublishModal({ groups, onPublish, onClose }: {
                     <div className="flex items-center rounded-[2px] py-[8px]">
                       <button
                         onClick={() => toggleCollapsed(group.label)}
-                        className="flex items-center gap-[6px] group/hdr"
+                        className="flex items-center gap-[4px] group/hdr"
                       >
+                        <span className="font-['Satoshi-Medium',sans-serif] text-[#646464] text-[14px] group-hover/hdr:text-[#1e1e1e] transition-colors">{group.label}</span>
                         <svg
                           fill="none" width="16" height="16" viewBox="0 0 16 16"
                           className="transition-transform duration-200 shrink-0"
@@ -634,7 +635,6 @@ function PublishModal({ groups, onPublish, onClose }: {
                         >
                           <path d="M4 6L8 10L12 6" stroke="#646464" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
-                        <span className="font-['Satoshi-Medium',sans-serif] text-[#646464] text-[14px] group-hover/hdr:text-[#1e1e1e] transition-colors">{group.label}</span>
                       </button>
                       <div className="flex-1" />
                       {!isCollapsed && (
