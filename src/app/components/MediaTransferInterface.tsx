@@ -585,10 +585,10 @@ function PublishModal({ groups, onPublish, onClose }: {
           </button>
         </div>
 
-        {/* Content area */}
-        <div className="flex flex-col p-[32px] gap-[24px] flex-1 min-h-0">
+        {/* Content area — no right padding so scrollbar sits at modal edge */}
+        <div className="flex flex-col pt-[32px] pb-[32px] pl-[32px] gap-[24px] flex-1 min-h-0">
           {/* Summary row */}
-          <div className="flex items-center justify-between shrink-0">
+          <div className="flex items-center justify-between shrink-0 pr-[32px]">
             <div className="flex items-center gap-[8px]">
               <span
                 className="font-['Satoshi-Bold',sans-serif] text-[14px]"
@@ -611,9 +611,9 @@ function PublishModal({ groups, onPublish, onClose }: {
             </span>
           </div>
 
-          {/* Asset list */}
+          {/* Asset list — scrollbar flush to modal right edge, 2px left buffer for outline */}
           <div className="flex flex-row gap-[8px] flex-1 min-h-0 overflow-hidden">
-            <div className="publish-scroll flex flex-col flex-1 overflow-y-auto gap-[24px] pr-[4px]" style={{ maxHeight: 360 }}>
+            <div className="publish-scroll flex flex-col flex-1 overflow-y-auto gap-[24px] pl-[2px] pr-[32px]" style={{ maxHeight: 360 }}>
               {groups.length === 0 ? (
                 <p className="font-['Satoshi-Regular',sans-serif] text-[#949494] text-[14px] text-center py-[24px]">No assets to publish.</p>
               ) : groups.map((group) => {
