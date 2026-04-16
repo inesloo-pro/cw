@@ -564,7 +564,7 @@ function PublishModal({ groups, onPublish, onClose }: {
         .publish-scroll::-webkit-scrollbar-thumb { background: #949494; border-radius: 100px; min-height: 32px; }
       `}</style>
       <div
-        className="bg-white rounded-[8px] w-[640px] flex flex-col overflow-hidden"
+        className="bg-white rounded-[8px] w-[576px] flex flex-col overflow-hidden"
         style={{ boxShadow: "0px 20px 60px rgba(0,0,0,0.18)" }}
       >
         {/* Header */}
