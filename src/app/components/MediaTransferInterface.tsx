@@ -613,7 +613,7 @@ function PublishModal({ groups, onPublish, onClose }: {
 
           {/* Asset list — scrollbar flush to modal right edge, 2px left buffer for outline */}
           <div className="flex flex-row gap-[8px] flex-1 min-h-0 overflow-hidden">
-            <div className="publish-scroll flex flex-col flex-1 overflow-y-auto gap-[24px] pl-[2px] pr-[32px]" style={{ maxHeight: 360 }}>
+            <div className="publish-scroll flex flex-col flex-1 overflow-y-auto gap-[24px] pl-[2px] pr-[32px] pb-[8px]" style={{ maxHeight: 360 }}>
               {groups.length === 0 ? (
                 <p className="font-['Satoshi-Regular',sans-serif] text-[#949494] text-[14px] text-center py-[24px]">No assets to publish.</p>
               ) : groups.map((group) => {
