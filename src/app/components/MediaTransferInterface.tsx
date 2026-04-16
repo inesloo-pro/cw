@@ -571,7 +571,7 @@ function PublishModal({ groups, onPublish, onClose }: {
         <div className="flex items-center justify-between px-[32px] h-[96px] border-b border-[#E4E4E4] shrink-0">
           <span
             className="font-['Satoshi-Bold',sans-serif] text-[24px]"
-            style={{ color: "rgba(0,0,0,0.20)" }}
+            style={{ color: "#1e1e1e" }}
           >
             Publish assets
           </span>
@@ -592,7 +592,7 @@ function PublishModal({ groups, onPublish, onClose }: {
             <div className="flex items-center gap-[8px]">
               <span
                 className="font-['Satoshi-Bold',sans-serif] text-[14px]"
-                style={{ color: "rgba(0,0,0,0.20)" }}
+                style={{ color: "#1e1e1e" }}
               >
                 {selectedCount} Media{selectedCount !== 1 ? "s" : ""} selected
               </span>
@@ -605,7 +605,7 @@ function PublishModal({ groups, onPublish, onClose }: {
             </div>
             <span
               className="font-['Satoshi-Medium',sans-serif] text-[14px]"
-              style={{ color: "rgba(0,0,0,0.20)" }}
+              style={{ color: "#1e1e1e" }}
             >
               {totalCount} Media{totalCount !== 1 ? "s" : ""} ready-to-publish
             </span>
@@ -679,7 +679,7 @@ function PublishModal({ groups, onPublish, onClose }: {
                                 <div className="flex flex-col gap-[2px] flex-1 min-w-0">
                                   <span
                                     className="font-['Satoshi-Medium',sans-serif] text-[14px] truncate"
-                                    style={{ color: "rgba(0,0,0,0.20)" }}
+                                    style={{ color: "#1e1e1e" }}
                                   >
                                     Denali.jpg
                                   </span>
@@ -744,10 +744,10 @@ function PublishToast({ onClose }: { onClose: () => void }) {
       <div className="flex flex-col justify-center gap-[8px] flex-1 self-stretch min-w-0">
         <span className="font-['Montserrat:Medium',sans-serif] text-[#949494] text-[12px]">Now</span>
         <div className="flex flex-col gap-[4px]">
-          <span className="font-['Montserrat:Bold',sans-serif] text-[rgba(0,0,0,0.20)] text-[14px] leading-snug">
+          <span className="font-['Montserrat:Bold',sans-serif] text-[#1e1e1e] text-[14px] leading-snug">
             The publication has been considered!
           </span>
-          <span className="font-['Montserrat:Medium',sans-serif] text-[rgba(0,0,0,0.20)] text-[14px] leading-snug">
+          <span className="font-['Montserrat:Medium',sans-serif] text-[#1e1e1e] text-[14px] leading-snug">
             You will receive a notification when it is finished!
           </span>
         </div>
