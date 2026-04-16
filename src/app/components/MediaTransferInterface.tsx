@@ -550,134 +550,167 @@ function PublishModal({ groups, onPublish, onClose }: {
     });
   };
 
+  const toggleAll = () => {
+    setSelected(selected.size === totalCount ? new Set() : new Set(allAssetIds));
+  };
+
   const selectedCount = selected.size;
   const totalCount = allAssetIds.length;
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[200]">
+      <style>{`
+        .publish-scroll::-webkit-scrollbar { width: 4px; background: #E4E4E4; border-radius: 100px; }
+        .publish-scroll::-webkit-scrollbar-thumb { background: #949494; border-radius: 100px; min-height: 32px; }
+      `}</style>
       <div
-        className="bg-white rounded-[8px] w-[520px] flex flex-col overflow-hidden"
+        className="bg-white rounded-[8px] w-[640px] flex flex-col overflow-hidden"
         style={{ boxShadow: "0px 20px 60px rgba(0,0,0,0.18)" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-[24px] pt-[24px] pb-[16px] shrink-0">
-          <span className="font-['Satoshi-Bold',sans-serif] text-[#1e1e1e] text-[20px]">Publish assets</span>
+        <div className="flex items-center justify-between px-[32px] h-[96px] border-b border-[#E4E4E4] shrink-0">
+          <span
+            className="font-['Satoshi-Bold',sans-serif] text-[24px]"
+            style={{ color: "rgba(0,0,0,0.20)" }}
+          >
+            Publish assets
+          </span>
           <button
             onClick={onClose}
-            className="flex items-center justify-center size-[24px] hover:bg-[#f5f5f5] rounded-[4px] transition-colors"
+            className="flex items-center justify-center size-[20px] hover:opacity-70 transition-opacity"
           >
             <svg fill="none" width="11" height="11" viewBox="0 0 9.984 9.984">
-              <path d={dropdownSvgPaths.p5391080} fill="#1E1E1E" />
+              <path d={dropdownSvgPaths.p5391080} fill="#1463FF" />
             </svg>
           </button>
         </div>
 
-        {/* Summary */}
-        <div className="flex items-center justify-between px-[24px] pb-[16px] shrink-0">
-          <div className="flex items-center gap-[8px]">
-            <span className="font-['Satoshi-Medium',sans-serif] text-[#1e1e1e] text-[14px]">
-              {selectedCount} Media{selectedCount !== 1 ? "s" : ""} selected
-            </span>
-            <button
-              onClick={() => setSelected(selectedCount === totalCount ? new Set() : new Set(allAssetIds))}
-              className="font-['Satoshi-Medium',sans-serif] text-[#1463FF] text-[14px] hover:underline"
+        {/* Content area */}
+        <div className="flex flex-col p-[32px] gap-[24px] flex-1 min-h-0">
+          {/* Summary row */}
+          <div className="flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-[8px]">
+              <span
+                className="font-['Satoshi-Bold',sans-serif] text-[14px]"
+                style={{ color: "rgba(0,0,0,0.20)" }}
+              >
+                {selectedCount} Media{selectedCount !== 1 ? "s" : ""} selected
+              </span>
+              <button
+                onClick={toggleAll}
+                className="font-['Satoshi-Medium',sans-serif] text-[#1B55F5] text-[14px] hover:underline"
+              >
+                {selectedCount === totalCount ? "Unselect all" : "Select all"}
+              </button>
+            </div>
+            <span
+              className="font-['Satoshi-Medium',sans-serif] text-[14px]"
+              style={{ color: "rgba(0,0,0,0.20)" }}
             >
-              {selectedCount === totalCount ? "Unselect" : "Select all"}
-            </button>
+              {totalCount} Media{totalCount !== 1 ? "s" : ""} ready-to-publish
+            </span>
           </div>
-          <span className="font-['Satoshi-Medium',sans-serif] text-[#949494] text-[14px]">
-            {totalCount} Media{totalCount !== 1 ? "s" : ""} ready-to-published
-          </span>
-        </div>
 
-        <div className="h-px bg-[#e4e4e4] shrink-0" />
-
-        {/* Asset list */}
-        <div className="flex flex-col overflow-y-auto max-h-[400px] px-[24px] py-[16px] gap-[20px]">
-          {groups.length === 0 ? (
-            <p className="font-['Satoshi-Regular',sans-serif] text-[#949494] text-[14px] text-center py-[24px]">No assets to publish.</p>
-          ) : groups.map((group) => {
-            const groupAllSel = group.assets.every((a) => selected.has(a.id));
-            const isCollapsed = collapsed.has(group.label);
-            return (
-              <div key={group.label} className="flex flex-col gap-[8px]">
-                {/* Group header */}
-                <div className="flex items-center justify-between">
-                  <button
-                    onClick={() => toggleCollapsed(group.label)}
-                    className="flex items-center gap-[6px] group/hdr"
-                  >
-                    <span className="font-['Satoshi-Bold',sans-serif] text-[#646464] text-[11px] uppercase tracking-[0.5px] group-hover/hdr:text-[#1e1e1e] transition-colors">{group.label}</span>
-                    <svg
-                      fill="none" width="8" height="5" viewBox="0 0 8 5"
-                      className="transition-transform duration-200 shrink-0"
-                      style={{ transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)" }}
-                    >
-                      <path d="M1 1L4 4L7 1" stroke="#646464" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                  {!isCollapsed && (
-                    <button
-                      onClick={() => toggleGroup(group)}
-                      className="font-['Satoshi-Medium',sans-serif] text-[#1463FF] text-[13px] hover:underline"
-                    >
-                      {groupAllSel ? "Unselect all" : "Select all"}
-                    </button>
-                  )}
-                </div>
-
-                {/* Asset rows */}
-                {!isCollapsed && group.assets.map((asset) => {
-                  const isSel = selected.has(asset.id);
-                  return (
-                    <div
-                      key={asset.id}
-                      onClick={() => toggleAsset(asset.id)}
-                      className={`flex items-center gap-[12px] px-[12px] py-[10px] rounded-[6px] cursor-pointer border transition-colors ${
-                        isSel ? "border-[#1463FF]" : "border-[#e4e4e4] hover:border-[#c0c0c0]"
-                      }`}
-                    >
-                      {/* Checkbox */}
-                      <div className={`shrink-0 size-[20px] rounded-[4px] border-2 flex items-center justify-center transition-colors ${
-                        isSel ? "bg-[#1463FF] border-[#1463FF]" : "bg-white border-[#d0d0d0]"
-                      }`}>
-                        {isSel && (
-                          <svg fill="none" width="11" height="8" viewBox="0 0 11 8">
-                            <path d="M1 4L4 7L10 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </div>
-                      {/* Thumbnail */}
-                      <div className="shrink-0 size-[40px] rounded-[4px] overflow-hidden bg-[#e4e4e4]">
-                        <img src={asset.image} alt="" className="w-full h-full object-cover" />
-                      </div>
-                      {/* Info */}
-                      <div className="flex flex-col gap-[2px] flex-1 min-w-0">
-                        <span className="font-['Satoshi-Medium',sans-serif] text-[#1e1e1e] text-[14px] truncate">Denali.jpg</span>
-                        <span className="font-['Satoshi-Regular',sans-serif] text-[#949494] text-[12px]">Version 1</span>
-                      </div>
+          {/* Asset list */}
+          <div className="flex flex-row gap-[8px] flex-1 min-h-0 overflow-hidden">
+            <div className="publish-scroll flex flex-col flex-1 overflow-y-auto gap-[24px] pr-[4px]" style={{ maxHeight: 360 }}>
+              {groups.length === 0 ? (
+                <p className="font-['Satoshi-Regular',sans-serif] text-[#949494] text-[14px] text-center py-[24px]">No assets to publish.</p>
+              ) : groups.map((group) => {
+                const groupAllSel = group.assets.every((a) => selected.has(a.id));
+                const isCollapsed = collapsed.has(group.label);
+                return (
+                  <div key={group.label} className="flex flex-col gap-[8px]">
+                    {/* Group header */}
+                    <div className="flex items-center rounded-[2px] py-[8px]">
+                      <button
+                        onClick={() => toggleCollapsed(group.label)}
+                        className="flex items-center gap-[6px] group/hdr"
+                      >
+                        <svg
+                          fill="none" width="16" height="16" viewBox="0 0 16 16"
+                          className="transition-transform duration-200 shrink-0"
+                          style={{ transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)" }}
+                        >
+                          <path d="M4 6L8 10L12 6" stroke="#646464" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span className="font-['Satoshi-Medium',sans-serif] text-[#646464] text-[14px] group-hover/hdr:text-[#1e1e1e] transition-colors">{group.label}</span>
+                      </button>
+                      <div className="flex-1" />
+                      {!isCollapsed && (
+                        <button
+                          onClick={() => toggleGroup(group)}
+                          className="font-['Satoshi-Medium',sans-serif] text-[#1B55F5] text-[14px] hover:underline"
+                        >
+                          {groupAllSel ? "Unselect all" : "Select all"}
+                        </button>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
 
-        <div className="h-px bg-[#e4e4e4] shrink-0" />
+                    {/* Asset rows */}
+                    {!isCollapsed && (
+                      <div className="flex flex-col gap-[8px]">
+                        {group.assets.map((asset) => {
+                          const isSel = selected.has(asset.id);
+                          return (
+                            <div
+                              key={asset.id}
+                              onClick={() => toggleAsset(asset.id)}
+                              className="flex items-center gap-[8px] p-[12px] rounded-[4px] cursor-pointer transition-all"
+                              style={isSel ? { outline: "2px solid #104FCC" } : { outline: "2px solid transparent", border: "none" }}
+                            >
+                              {/* Checkbox */}
+                              <div className={`shrink-0 size-[16px] rounded-[3px] border-2 flex items-center justify-center transition-colors ${
+                                isSel ? "bg-[#104FCC] border-[#104FCC]" : "bg-white border-[#d0d0d0]"
+                              }`}>
+                                {isSel && (
+                                  <svg fill="none" width="9" height="7" viewBox="0 0 9 7">
+                                    <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                )}
+                              </div>
+                              {/* Thumbnail + Info */}
+                              <div className="flex items-center gap-[12px] flex-1 min-w-0">
+                                {/* Thumbnail */}
+                                <div className="shrink-0 w-[72px] h-[56px] rounded-[2px] overflow-hidden bg-[#E4E4E4]">
+                                  <img src={asset.image} alt="" className="w-full h-full object-cover" />
+                                </div>
+                                {/* Info */}
+                                <div className="flex flex-col gap-[2px] flex-1 min-w-0">
+                                  <span
+                                    className="font-['Satoshi-Medium',sans-serif] text-[14px] truncate"
+                                    style={{ color: "rgba(0,0,0,0.20)" }}
+                                  >
+                                    Denali.jpg
+                                  </span>
+                                  <span className="font-['Satoshi-Medium',sans-serif] text-[#949494] text-[12px]">Version 1</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-[24px] py-[16px] shrink-0">
+        <div className="flex items-center justify-between px-[32px] h-[96px] border-t border-[#E4E4E4] shrink-0">
           <button
             onClick={onClose}
-            className="font-['Satoshi-Medium',sans-serif] text-[#1463FF] text-[14px] hover:underline"
+            className="font-['Satoshi-Medium',sans-serif] text-[#1463FF] text-[16px] px-[16px] hover:underline"
           >
             Cancel
           </button>
           <button
             onClick={() => onPublish(selected)}
             disabled={selectedCount === 0}
-            className="font-['Satoshi-Medium',sans-serif] text-white text-[14px] bg-[#1463FF] hover:bg-[#0f4fcf] disabled:opacity-40 disabled:cursor-not-allowed px-[24px] py-[10px] rounded-[6px] transition-colors"
+            className="font-['Satoshi-Medium',sans-serif] text-white text-[16px] bg-[#1463FF] hover:bg-[#0f4fcf] disabled:opacity-40 disabled:cursor-not-allowed px-[24px] rounded-[4px] transition-colors"
+            style={{ height: 50 }}
           >
             Publish
           </button>
